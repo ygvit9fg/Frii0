@@ -12,6 +12,9 @@ fun LoginScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+
+    val isEmailValid = email.contains("@gmail.com")
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -19,15 +22,24 @@ fun LoginScreen(navController: NavController) {
         verticalArrangement = Arrangement.Center
     ) {
         Text("Вход", style = MaterialTheme.typography.headlineMedium)
-
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
+            isError = !isEmailValid && email.isNotEmpty(),
             modifier = Modifier.fillMaxWidth()
         )
+
+        // если ошибка
+        if (!isEmailValid && email.isNotEmpty()) {
+            Text(
+                "Я жду @gmail",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -42,7 +54,12 @@ fun LoginScreen(navController: NavController) {
 
         Button(
             onClick = { /* TODO: авторизация */ },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            enabled = isEmailValid
         ) {
             Text("Войти")
         }
@@ -55,3 +72,4 @@ fun LoginScreen(navController: NavController) {
         }
     }
 }
+
