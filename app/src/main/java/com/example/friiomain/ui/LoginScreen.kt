@@ -1,75 +1,72 @@
-package com.example.friiomain
+package com.example.friiomain.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.friiomain.data.AppDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(navController: NavController) {
+    val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context)
+    val userDao = db.userDao()
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf("") }
 
-
-    val isEmailValid = email.contains("@gmail.com")
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        Text("Вход", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            isError = !isEmailValid && email.isNotEmpty(),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // если ошибка
-        if (!isEmailValid && email.isNotEmpty()) {
-            Text(
-                "Я жду @gmail",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                modifier = Modifier.padding(8.dp)
             )
-        }
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Пароль") },
+                modifier = Modifier.padding(8.dp)
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val user = userDao.login(email, password)
+                        message = if (user != null) {
+                            "Успешный вход!"
+                        } else {
+                            "Неправильный логин или пароль"
+                        }
+                    }
+                },
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Text("Войти")
+            }
 
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Пароль") },
-            modifier = Modifier.fillMaxWidth()
-        )
+            TextButton(onClick = { navController.navigate("register") }) {
+                Text("Нет аккаунта? Зарегистрироваться")
+            }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = { /* TODO: авторизация */ },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            enabled = isEmailValid
-        ) {
-            Text("Войти")
-        }
-
-        TextButton(
-            onClick = { navController.navigate("register") },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Нет аккаунта? Зарегистрироваться")
+            if (message.isNotEmpty()) {
+                Text(message, modifier = Modifier.padding(top = 16.dp))
+            }
         }
     }
 }
+
+
 
