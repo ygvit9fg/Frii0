@@ -12,6 +12,7 @@ import com.example.friiomain.data.AppDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -45,10 +46,16 @@ fun LoginScreen(navController: NavController) {
                 onClick = {
                     CoroutineScope(Dispatchers.IO).launch {
                         val user = userDao.login(email, password)
-                        message = if (user != null) {
-                            "Успешный вход!"
+                        if (user != null) {
+                            withContext(Dispatchers.Main){
+                                navController.navigate("home/${user.email}") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
                         } else {
-                            "Неправильный логин или пароль"
+                            withContext(Dispatchers.Main) {
+                                message = "Неправильный логин или пароль"
+                            }
                         }
                     }
                 },
@@ -56,6 +63,7 @@ fun LoginScreen(navController: NavController) {
             ) {
                 Text("Войти")
             }
+
 
             TextButton(onClick = { navController.navigate("register") }) {
                 Text("Нет аккаунта? Зарегистрироваться")
