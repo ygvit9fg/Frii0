@@ -9,7 +9,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.friiomain.data.AppDatabase
-import kotlinx.coroutines.CoroutineScope
+import com.example.friiomain.data.DataStoreManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -19,6 +19,8 @@ fun LoginScreen(navController: NavController) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val userDao = db.userDao()
+    val dataStoreManager = DataStoreManager(context)
+    val scope = rememberCoroutineScope() // ✅ добавили
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -44,10 +46,11 @@ fun LoginScreen(navController: NavController) {
 
             Button(
                 onClick = {
-                    CoroutineScope(Dispatchers.IO).launch {
+                    scope.launch(Dispatchers.IO) { // ✅ теперь scope есть
                         val user = userDao.login(email, password)
                         if (user != null) {
-                            withContext(Dispatchers.Main){
+                            dataStoreManager.saveUserEmail(user.email) // сохраняем email
+                            withContext(Dispatchers.Main) {
                                 navController.navigate("home/${user.email}") {
                                     popUpTo("login") { inclusive = true }
                                 }
@@ -64,7 +67,6 @@ fun LoginScreen(navController: NavController) {
                 Text("Войти")
             }
 
-
             TextButton(onClick = { navController.navigate("register") }) {
                 Text("Нет аккаунта? Зарегистрироваться")
             }
@@ -75,6 +77,5 @@ fun LoginScreen(navController: NavController) {
         }
     }
 }
-
 
 

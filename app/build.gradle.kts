@@ -2,50 +2,67 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
-    id("kotlin-kapt")
+    kotlin("kapt")
 }
 
-android {
-    namespace = "com.example.weatherfriends"
-    compileSdk = 34
+import java.util.Properties
 
-    defaultConfig {
-        applicationId = "com.example.weatherfriends"
-        minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        android {
+            namespace = "com.example.weatherfriends"
+            compileSdk = 34
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables.useSupportLibrary = true
-    }
+            buildFeatures {
+                buildConfig = true
+                compose = true
+            }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            defaultConfig {
+                applicationId = "com.example.weatherfriends"
+                minSdk = 24
+                targetSdk = 34
+                versionCode = 1
+                versionName = "1.0"
+
+                testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                vectorDrawables.useSupportLibrary = true
+
+                // Загружаем ключ из local.properties
+                val properties = Properties()
+                val localPropertiesFile = rootProject.file("local.properties")
+                if (localPropertiesFile.exists()) {
+                    localPropertiesFile.inputStream().use { properties.load(it) }
+                }
+                val apiKey = properties.getProperty("WEATHER_API_KEY") ?: ""
+                buildConfigField("String", "WEATHER_API_KEY", "\"$apiKey\"")
+            }
+
+            buildTypes {
+                release {
+                    isMinifyEnabled = false
+                    proguardFiles(
+                        getDefaultProguardFile("proguard-android-optimize.txt"),
+                        "proguard-rules.pro"
+                    )
+                }
+            }
+
+            compileOptions {
+                sourceCompatibility = JavaVersion.VERSION_17
+                targetCompatibility = JavaVersion.VERSION_17
+            }
+
+            kotlinOptions {
+                jvmTarget = "17"
+            }
+
+            composeOptions {
+                kotlinCompilerExtensionVersion = "1.5.3"
+            }
+
+            packaging {
+                resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            }
         }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-    buildFeatures {
-        compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3"
-    }
-    packaging {
-        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
-    }
-}
 
 dependencies {
     // Jetpack Compose
@@ -54,6 +71,7 @@ dependencies {
     implementation("androidx.compose.ui:ui:1.5.3")
     implementation("androidx.compose.ui:ui-tooling-preview:1.5.3")
     implementation("androidx.compose.material3:material3:1.1.2")
+    implementation("androidx.compose.material:material-icons-extended:1.5.3")
     debugImplementation("androidx.compose.ui:ui-tooling:1.5.3")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.5.3")
 
@@ -78,6 +96,9 @@ dependencies {
 
     // WorkManager (для фоновых задач и уведомлений)
     implementation("androidx.work:work-runtime-ktx:2.8.1")
+
+    // DataStore Preferences
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     // Тестирование
     testImplementation("junit:junit:4.13.2")
