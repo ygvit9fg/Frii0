@@ -23,7 +23,6 @@ fun HomeScreen(navController: NavController, currentUserEmail: String) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-
     var weatherText by remember { mutableStateOf("Погода: Загрузка...") }
     val weatherRepo = remember { WeatherRepository() }
 
@@ -48,7 +47,7 @@ fun HomeScreen(navController: NavController, currentUserEmail: String) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
+            // Погода
             Text(
                 text = weatherText,
                 style = MaterialTheme.typography.headlineSmall
@@ -61,14 +60,14 @@ fun HomeScreen(navController: NavController, currentUserEmail: String) {
                 onClick = { navController.navigate("friends/$currentUserEmail") },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Друзья")
+                Text("Мои друзья")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-
+            // Кнопка "Добавить в друзья"
             Button(
-                onClick = { navController.navigate("profile/$currentUserEmail") },
+                onClick = { navController.navigate("addFriend/$currentUserEmail") },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Добавить в друзья")
@@ -78,7 +77,7 @@ fun HomeScreen(navController: NavController, currentUserEmail: String) {
 
         FloatingActionButton(
             onClick = {
-                Toast.makeText(context, "Открываем сканер QR (позже добавим)", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Открываем сканер QR (заглушка)", Toast.LENGTH_SHORT).show()
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -96,6 +95,7 @@ fun HomeScreen(navController: NavController, currentUserEmail: String) {
         }
     }
 }
+
 
 
 

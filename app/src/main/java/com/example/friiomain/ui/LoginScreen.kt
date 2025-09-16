@@ -9,22 +9,24 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.friiomain.data.AppDatabase
-import com.example.friiomain.data.DataStoreManager
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(
+    navController: NavController,
+    onLoginSuccess: (String) -> Unit
+) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val userDao = db.userDao()
-    val dataStoreManager = DataStoreManager(context)
-    val scope = rememberCoroutineScope() // ✅ добавили
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
+
+    val scope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -46,19 +48,13 @@ fun LoginScreen(navController: NavController) {
 
             Button(
                 onClick = {
-                    scope.launch(Dispatchers.IO) { // ✅ теперь scope есть
+                    scope.launch(Dispatchers.IO) {
                         val user = userDao.login(email, password)
                         if (user != null) {
-                            dataStoreManager.saveUserEmail(user.email) // сохраняем email
-                            withContext(Dispatchers.Main) {
-                                navController.navigate("home/${user.email}") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            }
+                            message = "Успешный вход!"
+                            onLoginSuccess(email) // 🔑 теперь работает
                         } else {
-                            withContext(Dispatchers.Main) {
-                                message = "Неправильный логин или пароль"
-                            }
+                            message = "Неправильный логин или пароль"
                         }
                     }
                 },
@@ -77,5 +73,6 @@ fun LoginScreen(navController: NavController) {
         }
     }
 }
+
 
 
