@@ -24,4 +24,14 @@ interface WeatherService {
         @Query("units") units: String = "metric",
         @Query("lang") lang: String = "ru"
     ): WeatherResponse
+
+    @GET("data/2.5/weather")
+    suspend fun getWeatherByCoords(
+        @Query("lat") lat: Double,
+        @Query("lon") lon: Double,
+        @Query("appid") apiKey: String,
+        @Query("units") units: String,
+        @Query("lang") lang: String
+    ): WeatherResponse
+
 }

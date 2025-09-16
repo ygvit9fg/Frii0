@@ -77,7 +77,7 @@ fun HomeScreen(navController: NavController, currentUserEmail: String) {
 
         FloatingActionButton(
             onClick = {
-                Toast.makeText(context, "Открываем сканер QR (заглушка)", Toast.LENGTH_SHORT).show()
+                navController.navigate("qrScanner")
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)

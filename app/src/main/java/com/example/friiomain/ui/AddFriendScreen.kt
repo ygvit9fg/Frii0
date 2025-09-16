@@ -23,7 +23,7 @@ import com.google.zxing.qrcode.QRCodeWriter
 fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
     val context = LocalContext.current
 
-    // Генерируем QR-код из почты
+    //QR-код из почты
     val qrBitmap = remember {
         generateQrCode(currentUserEmail)
     }
@@ -51,7 +51,7 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Показываем QR-код
+            //QR-код
             qrBitmap?.let {
                 Image(
                     bitmap = it.asImageBitmap(),
@@ -62,13 +62,12 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Button(
-                onClick = {
-                    Toast.makeText(context, "Открываем сканер QR (заглушка)", Toast.LENGTH_SHORT).show()
-                }
-            ) {
+            Button(onClick = {
+                navController.navigate("qrScanner")
+            }) {
                 Text("Сканировать QR")
             }
+
         }
     }
 }

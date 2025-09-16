@@ -18,5 +18,10 @@ class WeatherRepository {
 
     suspend fun getWeather(city: String): WeatherResponse {
         return api.getWeather(city, BuildConfig.WEATHER_API_KEY)
+
+        suspend fun getWeatherByCoords(lat: Double, lon: Double): WeatherResponse {
+            return api.getWeatherByCoords(lat, lon, BuildConfig.WEATHER_API_KEY, "metric", "ru")
+
+        }
     }
 }

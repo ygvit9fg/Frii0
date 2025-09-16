@@ -1,5 +1,6 @@
 package com.example.friiomain
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -7,6 +8,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -19,8 +22,15 @@ import com.example.friiomain.ui.theme.FriioMainTheme
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+
+    private val CAMERA_PERMISSION_CODE = 100
+    private val LOCATION_PERMISSION_CODE = 101
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        requestCameraPermission()
+        requestLocationPermission()
 
         val dataStoreManager = DataStoreManager(this)
 
@@ -34,7 +44,6 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         startDestination = if (userEmail == null) "login" else "home/$userEmail"
                     ) {
-                        // Экран входа
                         composable("login") {
                             LoginScreen(
                                 navController = navController,
@@ -49,30 +58,36 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Главная
+                        composable("qrScanner") {
+                            QrScannerScreen(navController) { result ->
+                                // обработка результата сканирования QR
+                            }
+                        }
+
                         composable(
                             "home/{email}",
                             arguments = listOf(navArgument("email") { type = NavType.StringType })
                         ) { backStackEntry ->
-                            val email = backStackEntry.arguments?.getString("email") ?: return@composable
+                            val email =
+                                backStackEntry.arguments?.getString("email") ?: return@composable
                             HomeScreen(navController = navController, currentUserEmail = email)
                         }
 
-                        // Список друзей
                         composable(
                             "friends/{email}",
                             arguments = listOf(navArgument("email") { type = NavType.StringType })
                         ) { backStackEntry ->
-                            val email = backStackEntry.arguments?.getString("email") ?: return@composable
+                            val email =
+                                backStackEntry.arguments?.getString("email") ?: return@composable
                             FriendsScreen(navController = navController, currentUserEmail = email)
                         }
 
-                        // Добавить друга
                         composable(
                             "addFriend/{email}",
                             arguments = listOf(navArgument("email") { type = NavType.StringType })
                         ) { backStackEntry ->
-                            val email = backStackEntry.arguments?.getString("email") ?: return@composable
+                            val email =
+                                backStackEntry.arguments?.getString("email") ?: return@composable
                             AddFriendScreen(navController = navController, currentUserEmail = email)
                         }
                     }
@@ -80,7 +95,68 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+
+    private fun requestCameraPermission() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.CAMERA
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.CAMERA),
+                CAMERA_PERMISSION_CODE
+            )
+        }
+    }
+
+    private fun requestLocationPermission() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
+                LOCATION_PERMISSION_CODE
+            )
+        }
+    }
+
+
+    @Suppress("DEPRECATION")
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            CAMERA_PERMISSION_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                } else {
+
+                }
+            }
+
+            LOCATION_PERMISSION_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                } else {
+
+                }
+            }
+        }
+    }
 }
+
 
 
 

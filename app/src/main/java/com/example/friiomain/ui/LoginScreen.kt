@@ -52,7 +52,7 @@ fun LoginScreen(
                         val user = userDao.login(email, password)
                         if (user != null) {
                             message = "Успешный вход!"
-                            onLoginSuccess(email) // 🔑 теперь работает
+                            onLoginSuccess(email)
                         } else {
                             message = "Неправильный логин или пароль"
                         }
