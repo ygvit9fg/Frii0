@@ -1,10 +1,9 @@
 package com.example.friiomain.ui
 
+import android.annotation.SuppressLint
+import android.location.Location
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.QrCode
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,90 +12,81 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.friiomain.data.WeatherRepository
+import com.example.friiomain.data.WeatherResponse
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.tasks.await
 
-@OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("MissingPermission")
 @Composable
-fun HomeScreen(navController: NavController, currentUserEmail: String) {
+fun HomeScreen(navController: NavController, email: String) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val coroutineScope = rememberCoroutineScope()
 
-    var weatherText by remember { mutableStateOf("Погода: Загрузка...") }
-    val weatherRepo = remember { WeatherRepository() }
+    var weather by remember { mutableStateOf<WeatherResponse?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        scope.launch {
+        coroutineScope.launch(Dispatchers.IO) {
             try {
-                val response = withContext(Dispatchers.IO) {
-                    weatherRepo.getWeather("Moscow")
+                val fusedLocationClient: FusedLocationProviderClient =
+                    LocationServices.getFusedLocationProviderClient(context)
+
+                val location: Location? = fusedLocationClient.lastLocation.await()
+                if (location != null) {
+                    val repo = WeatherRepository("4731afa59235bbee6a194fc02cff4f8b")
+                    val result = repo.getWeather(location.latitude, location.longitude)
+                    weather = result
+                } else {
+                    launch(Dispatchers.Main) {
+                        Toast.makeText(context, "Не удалось получить локацию", Toast.LENGTH_LONG).show()
+                    }
                 }
-                weatherText =
-                    "Погода: ${response.main.temp}°C, ${response.weather.firstOrNull()?.description ?: ""}"
             } catch (e: Exception) {
-                weatherText = "Ошибка загрузки погоды"
+                e.printStackTrace()
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Ошибка: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            } finally {
+                isLoading = false
             }
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Погода
-            Text(
-                text = weatherText,
-                style = MaterialTheme.typography.headlineSmall
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-
-            Button(
-                onClick = { navController.navigate("friends/$currentUserEmail") },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Мои друзья")
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        when {
+            isLoading -> {
+                CircularProgressIndicator()
             }
+            weather != null -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Привет, $email", style = MaterialTheme.typography.headlineSmall)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Температура: ${weather!!.main.temp}°C", style = MaterialTheme.typography.headlineMedium)
+                    Text("Описание: ${weather!!.weather[0].description}", style = MaterialTheme.typography.bodyLarge)
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Кнопка "Добавить в друзья"
-            Button(
-                onClick = { navController.navigate("addFriend/$currentUserEmail") },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Добавить в друзья")
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(onClick = { navController.navigate("friends/$email") }) {
+                        Text("Мои друзья")
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(onClick = { navController.navigate("addFriend/$email") }) {
+                        Text("Добавить друга")
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(onClick = { navController.navigate("qrScanner") }) {
+                        Text("Сканировать QR")
+                    }
+                }
             }
-        }
-
-
-        FloatingActionButton(
-            onClick = {
-                navController.navigate("qrScanner")
-            },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 32.dp)
-                .size(80.dp),
-            shape = CircleShape,
-            containerColor = MaterialTheme.colorScheme.primary
-        ) {
-            Icon(
-                Icons.Rounded.QrCode,
-                contentDescription = "Сканировать QR",
-                modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.onPrimary
-            )
+            else -> {
+                Text("Нет данных о погоде")
+            }
         }
     }
 }
-
-
 
 
 

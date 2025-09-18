@@ -66,36 +66,44 @@ class MainActivity : ComponentActivity() {
 
                         composable(
                             "home/{email}",
-                            arguments = listOf(navArgument("email") { type = NavType.StringType })
+                            arguments = listOf(navArgument("email") {
+                                type = NavType.StringType
+                            })
                         ) { backStackEntry ->
-                            val email =
-                                backStackEntry.arguments?.getString("email") ?: return@composable
-                            HomeScreen(navController = navController, currentUserEmail = email)
+                            val email = backStackEntry.arguments?.getString("email") ?: ""
+                            HomeScreen(navController = navController, email = email)
                         }
 
                         composable(
                             "friends/{email}",
-                            arguments = listOf(navArgument("email") { type = NavType.StringType })
+                            arguments = listOf(navArgument("email") {
+                                type = NavType.StringType
+                            })
                         ) { backStackEntry ->
-                            val email =
-                                backStackEntry.arguments?.getString("email") ?: return@composable
-                            FriendsScreen(navController = navController, currentUserEmail = email)
+                            val email = backStackEntry.arguments?.getString("email") ?: ""
+                            FriendsScreen(
+                                navController = navController,
+                                currentUserEmail = email
+                            )
                         }
 
                         composable(
                             "addFriend/{email}",
-                            arguments = listOf(navArgument("email") { type = NavType.StringType })
+                            arguments = listOf(navArgument("email") {
+                                type = NavType.StringType
+                            })
                         ) { backStackEntry ->
-                            val email =
-                                backStackEntry.arguments?.getString("email") ?: return@composable
-                            AddFriendScreen(navController = navController, currentUserEmail = email)
+                            val email = backStackEntry.arguments?.getString("email") ?: ""
+                            AddFriendScreen(
+                                navController = navController,
+                                currentUserEmail = email
+                            )
                         }
                     }
                 }
             }
         }
     }
-
 
     private fun requestCameraPermission() {
         if (ContextCompat.checkSelfPermission(
@@ -127,38 +135,7 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
-
-
-    @Suppress("DEPRECATION")
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        when (requestCode) {
-            CAMERA_PERMISSION_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                } else {
-
-                }
-            }
-
-            LOCATION_PERMISSION_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                } else {
-
-                }
-            }
-        }
-    }
 }
-
-
-
 
 
 

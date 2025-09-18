@@ -26,6 +26,9 @@ import java.util.Properties
                 testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 vectorDrawables.useSupportLibrary = true
 
+                buildConfigField("String", "WEATHER_API_KEY", "\"4731afa59235bbee6a194fc02cff4f8b\"")
+
+
                 // Загружаем ключ из local.properties
                 val properties = Properties()
                 val localPropertiesFile = rootProject.file("local.properties")
@@ -66,7 +69,11 @@ import java.util.Properties
 
 dependencies {
 
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+
+
     implementation("com.google.android.gms:play-services-location:21.0.1")
+
 
 
     // CameraX
@@ -75,6 +82,7 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.3.0")
     implementation("androidx.camera:camera-view:1.3.0")
     implementation("androidx.camera:camera-extensions:1.3.0")
+
 
     // ML Kit штрих/QR-кодов
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
