@@ -1,6 +1,7 @@
 package com.example.friiomain.ui
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.location.Location
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -21,13 +22,14 @@ import kotlinx.coroutines.tasks.await
 
 @SuppressLint("MissingPermission")
 @Composable
-fun HomeScreen(navController: NavController, email: String) {
+fun HomeScreen(navController: NavController, email: String, user: String) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
     var weather by remember { mutableStateOf<WeatherResponse?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
+    // Загружаем погоду при первом входе
     LaunchedEffect(Unit) {
         coroutineScope.launch(Dispatchers.IO) {
             try {
@@ -36,7 +38,7 @@ fun HomeScreen(navController: NavController, email: String) {
 
                 val location: Location? = fusedLocationClient.lastLocation.await()
                 if (location != null) {
-                    val repo = WeatherRepository("4731afa59235bbee6a194fc02cff4f8b")
+                    val repo = WeatherRepository("4731afa59235bbee6a194fc02cff4f8b") // 🔑 API ключ OpenWeather
                     val result = repo.getWeather(location.latitude, location.longitude)
                     weather = result
                 } else {
@@ -55,6 +57,7 @@ fun HomeScreen(navController: NavController, email: String) {
         }
     }
 
+    // UI
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         when {
             isLoading -> {
@@ -62,7 +65,7 @@ fun HomeScreen(navController: NavController, email: String) {
             }
             weather != null -> {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Привет, $email", style = MaterialTheme.typography.headlineSmall)
+                    Text("Привет, $user 👋", style = MaterialTheme.typography.headlineSmall)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Температура: ${weather!!.main.temp}°C", style = MaterialTheme.typography.headlineMedium)
                     Text("Описание: ${weather!!.weather[0].description}", style = MaterialTheme.typography.bodyLarge)
@@ -87,6 +90,5 @@ fun HomeScreen(navController: NavController, email: String) {
         }
     }
 }
-
 
 

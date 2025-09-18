@@ -1,6 +1,5 @@
 package com.example.friiomain.ui
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -10,14 +9,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.friiomain.data.AppDatabase
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
     navController: NavController,
-    onLoginSuccess: (String) -> Unit
+    onLoginSuccess: (String, String) -> Unit   // ← теперь 2 параметра (email, name)
 ) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
@@ -53,7 +51,8 @@ fun LoginScreen(
                         val user = userDao.login(email, password)
                         if (user != null) {
                             message = "Успешный вход!"
-                            onLoginSuccess(email)
+                            // Передаём и email, и имя пользователя
+                            onLoginSuccess(user.email, user.name)
                         } else {
                             message = "Неправильный логин или пароль"
                         }
@@ -74,6 +73,8 @@ fun LoginScreen(
         }
     }
 }
+
+
 
 
 

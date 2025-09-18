@@ -1,6 +1,5 @@
 package com.example.friiomain.ui
 
-
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -56,11 +55,7 @@ fun RegisterScreen(navController: NavController) {
                     if (existingUser != null) {
                         Toast.makeText(context, "Эта почта уже зарегистрирована", Toast.LENGTH_LONG).show()
                     } else {
-                        val newUser = UserEntity(
-                            name = name,
-                            email = email,
-                            password = password
-                        )
+                        val newUser = UserEntity(name = name, email = email, password = password)
                         userDao.insertUser(newUser)
                         Toast.makeText(context, "Регистрация успешна!", Toast.LENGTH_LONG).show()
                         navController.navigate("login")
@@ -72,3 +67,5 @@ fun RegisterScreen(navController: NavController) {
         }
     }
 }
+
+
