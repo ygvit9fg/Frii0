@@ -38,7 +38,7 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
     var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var friends by remember { mutableStateOf(listOf<FriendEntity>()) }
 
-    // Генерируем QR-код и подгружаем список друзей
+
     LaunchedEffect(currentUserEmail) {
         qrBitmap = QRCodeGenerator.generateQRCode(currentUserEmail)
         coroutineScope.launch(Dispatchers.IO) {
@@ -68,7 +68,7 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
                 .padding(24.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Верх: профиль + QR
+
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.Center
@@ -129,7 +129,7 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
 
             // Нижний блок: кнопки (Выйти / Удалить)
             Column {
-                // ✅ Кнопка выхода с очисткой сессии
+                //  Кнопка выхода с очисткой сессии
                 Button(
                     onClick = {
                         sessionManager.logout() // очищаем сессию

@@ -19,7 +19,7 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -
     val db = AppDatabase.getDatabase(context)
     val userDao = db.userDao()
     val coroutineScope = rememberCoroutineScope()
-    val sessionManager = remember { SessionManager(context) } // ✅ создаём SessionManager
+    val sessionManager = remember { SessionManager(context) }
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -60,7 +60,7 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -
                     coroutineScope.launch {
                         val user = userDao.login(email, password)
                         if (user != null) {
-                            // ✅ сохраняем сессию
+                            // сохраняем сессию
                             sessionManager.saveUser(user.email, user.name)
 
                             onLoginSuccess(user.email, user.name)
@@ -80,13 +80,24 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(
+                modifier = Modifier.padding(top = 16.dp),
                 horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Don't have an account?")
-                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Don’t have an account?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+
+                Spacer(modifier = Modifier.width(6.dp))
+
                 TextButton(onClick = { navController.navigate("register") }) {
-                    Text("Register")
+                    Text(
+                        text = "Register",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }

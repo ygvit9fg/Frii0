@@ -81,7 +81,7 @@ fun RegisterScreen(navController: NavController) {
                             }
                         } else {
                             val newUser = UserEntity(email = email, name = name, password = password)
-                            userDao.insertUser(newUser) // ✅ правильный вызов
+                            userDao.insertUser(newUser)
 
                             // сохраняем сессию
                             sessionManager.saveUser(email, name)
