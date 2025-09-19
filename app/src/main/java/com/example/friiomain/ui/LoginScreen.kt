@@ -9,11 +9,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.friiomain.data.AppDatabase
-import kotlinx.coroutines.Dispatchers
+import com.example.friiomain.utils.SessionManager
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
-
 
 @Composable
 fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -> Unit) {
@@ -21,23 +19,21 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -
     val db = AppDatabase.getDatabase(context)
     val userDao = db.userDao()
     val coroutineScope = rememberCoroutineScope()
+    val sessionManager = remember { SessionManager(context) } // ✅ создаём SessionManager
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center // Всё выравниваем по центру экрана
+        contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(24.dp) // отступы от краёв
+            modifier = Modifier.padding(24.dp)
         ) {
-            Text(
-                text = "Вход",
-                style = MaterialTheme.typography.headlineMedium
-            )
+            Text(text = "Вход", style = MaterialTheme.typography.headlineMedium)
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -64,6 +60,9 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -
                     coroutineScope.launch {
                         val user = userDao.login(email, password)
                         if (user != null) {
+                            // ✅ сохраняем сессию
+                            sessionManager.saveUser(user.email, user.name)
+
                             onLoginSuccess(user.email, user.name)
                             navController.navigate("home/${user.email}/${user.name}") {
                                 popUpTo("login") { inclusive = true }
@@ -80,17 +79,19 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            TextButton(
-                onClick = { navController.navigate("register") },
+            Row(
+                horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Зарегистрироваться")
+                Text("Don't have an account?")
+                Spacer(modifier = Modifier.width(4.dp))
+                TextButton(onClick = { navController.navigate("register") }) {
+                    Text("Register")
+                }
             }
         }
     }
 }
-
-
 
 
 
