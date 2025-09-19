@@ -3,7 +3,10 @@ package com.example.friiomain
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -24,29 +27,23 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val navController = rememberNavController()
+            var startDestination by remember { mutableStateOf<String?>(null) }
 
-            // состояние для email и имени
-            var userEmail by remember { mutableStateOf<String?>(null) }
-            var userName by remember { mutableStateOf<String?>(null) }
-
-            // загружаем данные из DataStore один раз при старте
+            // Загружаем email и name из DataStore
             LaunchedEffect(Unit) {
-                userEmail = dataStoreManager.userEmail.first()
-                userName = dataStoreManager.userName.first()
+                val email = dataStoreManager.userEmail.first()
+                val name = dataStoreManager.userName.first()
+                startDestination = if (email.isNullOrEmpty()) "login" else "home/$email/$name"
             }
 
-            NavHost(
-                navController = navController,
-                startDestination = if (userEmail == null) "login" else "home/$userEmail/$userName"
-            ) {
-                composable("register") {
-                    RegisterScreen(navController = navController)
-                }
+            if (startDestination != null) {
+                NavHost(navController = navController, startDestination = startDestination!!) {
+                    composable("register") {
+                        RegisterScreen(navController)
+                    }
 
-                composable("login") {
-                    LoginScreen(
-                        navController = navController,
-                        onLoginSuccess = { email, name ->
+                    composable("login") {
+                        LoginScreen(navController) { email, name ->
                             lifecycleScope.launch {
                                 dataStoreManager.saveUserEmail(email)
                                 dataStoreManager.saveUserName(name)
@@ -55,48 +52,48 @@ class MainActivity : ComponentActivity() {
                                 popUpTo("login") { inclusive = true }
                             }
                         }
-                    )
-                }
+                    }
 
-                composable(
-                    "home/{email}/{user}",
-                    arguments = listOf(
-                        navArgument("email") { type = NavType.StringType },
-                        navArgument("user") { type = NavType.StringType }
-                    )
-                ) { backStackEntry ->
-                    val email = backStackEntry.arguments?.getString("email") ?: ""
-                    val user = backStackEntry.arguments?.getString("user") ?: ""
-                    HomeScreen(navController, email, user)
-                }
+                    composable(
+                        "home/{email}/{name}",
+                        arguments = listOf(
+                            navArgument("email") { type = NavType.StringType },
+                            navArgument("name") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val email = backStackEntry.arguments?.getString("email") ?: ""
+                        val name = backStackEntry.arguments?.getString("name") ?: ""
+                        HomeScreen(navController, email, name)
+                    }
 
-                composable(
-                    "friends/{email}",
-                    arguments = listOf(navArgument("email") { type = NavType.StringType })
-                ) { backStackEntry ->
-                    val email = backStackEntry.arguments?.getString("email") ?: ""
-                    FriendsScreen(navController, currentUserEmail = email)
-                }
+                    // Остальные экраны
+                    composable(
+                        "friends/{email}",
+                        arguments = listOf(navArgument("email") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val email = backStackEntry.arguments?.getString("email") ?: ""
+                        FriendsScreen(navController, email)
+                    }
 
-                composable(
-                    "addFriend/{email}",
-                    arguments = listOf(navArgument("email") { type = NavType.StringType })
-                ) { backStackEntry ->
-                    val email = backStackEntry.arguments?.getString("email") ?: ""
-                    AddFriendScreen(navController, currentUserEmail = email)
-                }
+                    composable(
+                        "addFriend/{email}",
+                        arguments = listOf(navArgument("email") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val email = backStackEntry.arguments?.getString("email") ?: ""
+                        AddFriendScreen(navController, email)
+                    }
 
-                composable("qrScanner") {
-                    QrScannerScreen(navController) { result ->
-                        // обработка результата QR
+                    composable("qrScanner") {
+                        QrScannerScreen(navController) {}
                     }
                 }
+            } else {
+                // Можно показать пустой экран или Splash
+                Box(modifier = Modifier.fillMaxSize())
             }
         }
     }
 }
-
-
 
 
 

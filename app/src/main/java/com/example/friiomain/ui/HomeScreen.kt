@@ -19,6 +19,8 @@ import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCodeScanner
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -29,7 +31,6 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
     var weather by remember { mutableStateOf<WeatherResponse?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Загружаем погоду при первом входе
     LaunchedEffect(Unit) {
         coroutineScope.launch(Dispatchers.IO) {
             try {
@@ -58,17 +59,23 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
     }
 
     // UI
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize()) {
         when {
             isLoading -> {
-                CircularProgressIndicator()
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
             weather != null -> {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 100.dp), // чтобы не перекрывать FAB
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
                     Text("Привет, $user 👋", style = MaterialTheme.typography.headlineSmall)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Температура: ${weather!!.main.temp}°C", style = MaterialTheme.typography.headlineMedium)
-                    Text("Описание: ${weather!!.weather[0].description}", style = MaterialTheme.typography.bodyLarge)
+                    Text("О погоде: ${weather!!.weather[0].description}", style = MaterialTheme.typography.bodyLarge)
 
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(onClick = { navController.navigate("friends/$email") }) {
@@ -76,19 +83,29 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(onClick = { navController.navigate("addFriend/$email") }) {
-                        Text("Добавить друга")
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Button(onClick = { navController.navigate("qrScanner") }) {
-                        Text("Сканировать QR")
+                        Text("Мой профиль")
                     }
                 }
             }
             else -> {
-                Text("Нет данных о погоде")
+                Text("Нет данных о погоде", modifier = Modifier.align(Alignment.Center))
             }
+        }
+
+
+        FloatingActionButton(
+            onClick = { navController.navigate("qrScanner") },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 32.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.QrCodeScanner,
+                contentDescription = "Сканировать QR"
+            )
         }
     }
 }
+
 
 
