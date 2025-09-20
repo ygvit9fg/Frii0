@@ -28,6 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+
 @SuppressLint("MissingPermission")
 @Composable
 fun HomeScreen(navController: NavController, email: String, user: String) {
@@ -287,7 +288,7 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             Button(
-                onClick = { navController.navigate("qrScanner") },
+                onClick = { navController.navigate("qrScanner/$email") },
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.weight(1f).padding(end = 4.dp)
             ) {
@@ -295,6 +296,7 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("QR Code")
             }
+
             Button(
                 onClick = { /* TODO: Find Walks */ },
                 shape = RoundedCornerShape(12.dp),

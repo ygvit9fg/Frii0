@@ -33,7 +33,7 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
     val userDao = db.userDao()
     val friendDao = db.friendDao()
     val coroutineScope = rememberCoroutineScope()
-    val sessionManager = remember { SessionManager(context) } // ✅ SessionManager
+    val sessionManager = remember { SessionManager(context) } // SessionManager
 
     var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var friends by remember { mutableStateOf(listOf<FriendEntity>()) }

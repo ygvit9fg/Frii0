@@ -23,7 +23,7 @@ import androidx.compose.ui.Alignment
 fun QrScannerScreen(navController: NavController, onResult: (String) -> Unit) {
     val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         if (result.contents != null) {
-            onResult(result.contents) //QR-код
+            onResult(result.contents)
             navController.popBackStack()
         } else {
             navController.popBackStack()
