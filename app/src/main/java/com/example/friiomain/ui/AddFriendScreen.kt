@@ -151,6 +151,7 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
                             val user = userDao.findByEmail(currentUserEmail)
                             if (user != null) {
                                 userDao.delete(user)
+                                sessionManager.logout()
                                 withContext(Dispatchers.Main) {
                                     Toast.makeText(context, "Аккаунт удален", Toast.LENGTH_LONG).show()
                                     navController.navigate("register") {

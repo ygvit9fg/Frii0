@@ -1,8 +1,12 @@
 package com.example.friiomain.ui
 
-import android.annotation.SuppressLint
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 import android.location.Location
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -19,17 +23,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.example.friiomain.data.WeatherRepository
 import com.example.friiomain.data.WeatherResponse
-import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import com.example.friiomain.ui.components.HomeTopBar
+import com.example.friiomain.ui.components.ProfileDialog
+import com.example.friiomain.utils.loadWeather
 
 
-@SuppressLint("MissingPermission")
+
 @Composable
 fun HomeScreen(navController: NavController, email: String, user: String) {
     val context = LocalContext.current
@@ -38,82 +45,96 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
     var weather by remember { mutableStateOf<WeatherResponse?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) {
-        coroutineScope.launch(Dispatchers.IO) {
-            try {
-                val fusedLocationClient: FusedLocationProviderClient =
-                    LocationServices.getFusedLocationProviderClient(context)
+    // Состояния для диалогов
+    var showProfileDialog by remember { mutableStateOf(false) }
+    var showNotificationsDialog by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
 
-                val location: Location? = fusedLocationClient.lastLocation.await()
-                if (location != null) {
-                    val repo = WeatherRepository("4731afa59235bbee6a194fc02cff4f8b")
-                    val result = repo.getWeather(location.latitude, location.longitude)
-                    weather = result
-                } else {
-                    launch(Dispatchers.Main) {
-                        Toast.makeText(context, "Не удалось получить локацию", Toast.LENGTH_LONG).show()
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                launch(Dispatchers.Main) {
-                    Toast.makeText(context, "Ошибка: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            } finally {
+    // --- Лаунчер для разрешений (как у тебя было) ---
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            coroutineScope.launch(Dispatchers.IO) {
+                val result = loadWeather(context)
+                weather = result
                 isLoading = false
+            }
+        } else {
+            Toast.makeText(context, "Нет доступа к геолокации", Toast.LENGTH_LONG).show()
+            isLoading = false
+        }
+    }
+
+    // --- Проверка разрешений ---
+    LaunchedEffect(Unit) {
+        val permission = Manifest.permission.ACCESS_FINE_LOCATION
+        when {
+            ContextCompat.checkSelfPermission(
+                context,
+                permission
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                coroutineScope.launch(Dispatchers.IO) {
+                    val result = loadWeather(context)
+                    weather = result
+                    isLoading = false
+                }
+            }
+
+            else -> {
+                locationPermissionLauncher.launch(permission)
             }
         }
     }
 
-    if (isLoading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        return
+    // --- Диалоги ---
+    if (showProfileDialog) {
+        ProfileDialog(
+            name = user,
+            username = user.lowercase(),
+            email = email,
+            onDismiss = { showProfileDialog = false }
+        )
     }
 
+    if (showNotificationsDialog) {
+        AlertDialog(
+            onDismissRequest = { showNotificationsDialog = false },
+            confirmButton = {},
+            title = { Text("Уведомления") },
+            text = { Text("Пока пусто 🚀") }
+        )
+    }
+
+    if (showSettingsDialog) {
+        AlertDialog(
+            onDismissRequest = { showSettingsDialog = false },
+            confirmButton = {},
+            title = { Text("Настройки") },
+            text = { Text("Раздел в разработке ⚙️") }
+        )
+    }
+
+    // --- UI ---
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.SpaceBetween // чтобы все равномерно уместилось
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // --- Блок "Приветствие" ---
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
-        ) {
-            Column(
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text(
-                    text = "Привет, $user 👋",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Ready for walk?",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = Color.Gray
-                )
-            }
-            Row {
-                IconButton(onClick = { /* TODO: Settings */ }) {
-                    Icon(Icons.Default.Settings, contentDescription = "Настройки")
-                }
-                IconButton(onClick = { /* TODO: Notifications */ }) {
-                    Icon(Icons.Default.Notifications, contentDescription = "Уведомления")
-                }
-            }
-        }
+        // ✅ Наш TopBar с кнопками
+        HomeTopBar(
+            user = user,
+            onProfileClick = { showProfileDialog = true },
+            onNotificationsClick = { showNotificationsDialog = true },
+            onSettingsClick = { showSettingsDialog = true }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // --- Блок "Погода" ---
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(),
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
         ) {
@@ -126,7 +147,11 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Place, contentDescription = "Локация", tint = Color.Gray)
+                            Icon(
+                                Icons.Default.Place,
+                                contentDescription = "Локация",
+                                tint = Color.Gray
+                            )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Город (заглушка)", fontWeight = FontWeight.Bold)
                         }
@@ -282,7 +307,6 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
             }
         }
 
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -308,6 +332,38 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
             }
         }
     }
+
+
+    suspend fun loadWeather(context: Context): WeatherResponse? {
+        return try {
+            // ✅ Проверка разрешения перед доступом к геолокации
+            val hasPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!hasPermission) {
+                return null // или можно кинуть SecurityException
+            }
+
+            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+            val location: Location? = fusedLocationClient.lastLocation.await()
+
+            if (location != null) {
+                val repo = WeatherRepository("4731afa59235bbee6a194fc02cff4f8b") // 🔑 API ключ
+                repo.getWeather(location.latitude, location.longitude)
+            } else {
+                null
+            }
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+            null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
 }
+
 
 

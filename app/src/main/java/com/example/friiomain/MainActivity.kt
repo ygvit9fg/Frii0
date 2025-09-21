@@ -9,9 +9,6 @@ import androidx.navigation.compose.composable
 import com.example.friiomain.ui.*
 import com.example.friiomain.utils.SessionManager
 import androidx.compose.runtime.*
-import com.example.friiomain.ui.QrScannerScreen
-
-
 
 
 class MainActivity : ComponentActivity() {
@@ -48,6 +45,41 @@ class MainActivity : ComponentActivity() {
                     RegisterScreen(navController)
                 }
 
+                // --- Username ---
+                composable("username?name={name}&email={email}&password={password}") { backStackEntry ->
+                    val name = backStackEntry.arguments?.getString("name") ?: ""
+                    val email = backStackEntry.arguments?.getString("email") ?: ""
+                    val password = backStackEntry.arguments?.getString("password") ?: ""
+                    UsernameScreen(navController, name, email, password)
+                }
+
+                // --- Weather Preferences step ---
+                composable("preferences/{email}/{password}/{name}/{username}") { backStackEntry ->
+                    val email = backStackEntry.arguments?.getString("email") ?: ""
+                    val password = backStackEntry.arguments?.getString("password") ?: ""
+                    val name = backStackEntry.arguments?.getString("name") ?: ""
+                    val username = backStackEntry.arguments?.getString("username") ?: ""
+                    WeatherPreferencesScreen(navController, email, password, name, username)
+                }
+
+                // --- Preferences ---
+                composable("preferences?name={name}&email={email}&password={password}&username={username}") { backStackEntry ->
+                    val name = backStackEntry.arguments?.getString("name") ?: ""
+                    val email = backStackEntry.arguments?.getString("email") ?: ""
+                    val password = backStackEntry.arguments?.getString("password") ?: ""
+                    val username = backStackEntry.arguments?.getString("username") ?: ""
+                    WeatherPreferencesScreen(navController, name, email, password, username)
+                }
+
+                composable("username?name={name}&email={email}&password={password}") { backStackEntry ->
+                    val name = backStackEntry.arguments?.getString("name") ?: ""
+                    val email = backStackEntry.arguments?.getString("email") ?: ""
+                    val password = backStackEntry.arguments?.getString("password") ?: ""
+
+                    UsernameScreen(navController, name, email, password)
+                }
+
+
                 // --- Home ---
                 composable("home/{email}/{name}") { backStackEntry ->
                     val email = backStackEntry.arguments?.getString("email") ?: ""
@@ -78,5 +110,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 

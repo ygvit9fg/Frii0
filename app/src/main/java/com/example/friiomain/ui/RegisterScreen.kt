@@ -1,29 +1,15 @@
 package com.example.friiomain.ui
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.friiomain.data.AppDatabase
-import com.example.friiomain.data.UserEntity
-import com.example.friiomain.utils.SessionManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @Composable
 fun RegisterScreen(navController: NavController) {
-    val context = LocalContext.current
-    val db = AppDatabase.getDatabase(context)
-    val userDao = db.userDao()
-    val sessionManager = remember { SessionManager(context) }
-    val coroutineScope = rememberCoroutineScope()
-
     var email by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -73,30 +59,12 @@ fun RegisterScreen(navController: NavController) {
 
             Button(
                 onClick = {
-                    coroutineScope.launch(Dispatchers.IO) {
-                        val existingUser = userDao.getUserByEmail(email)
-                        if (existingUser != null) {
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Такой пользователь уже существует", Toast.LENGTH_LONG).show()
-                            }
-                        } else {
-                            val newUser = UserEntity(email = email, name = name, password = password)
-                            userDao.insertUser(newUser)
-
-                            // сохраняем сессию
-                            sessionManager.saveUser(email, name)
-
-                            withContext(Dispatchers.Main) {
-                                navController.navigate("home/$email/$name") {
-                                    popUpTo("register") { inclusive = true }
-                                }
-                            }
-                        }
-                    }
+                    //  после данных идём на UsernameScreen
+                    navController.navigate("username?name=$name&email=$email&password=$password")
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Зарегистрироваться")
+                Text("Далее")
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -125,7 +93,6 @@ fun RegisterScreen(navController: NavController) {
         }
     }
 }
-
 
 
 

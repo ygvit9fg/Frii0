@@ -11,5 +11,7 @@ data class UserEntity(
     val email: String,
     val password: String,
     val preferredWeather: String? = null,
-    val lastLogin: Long = System.currentTimeMillis()
+    val lastLogin: Long = System.currentTimeMillis(),
+    val username: String? = null,
+    val preferences: String? = null
 )

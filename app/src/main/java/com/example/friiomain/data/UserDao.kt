@@ -9,21 +9,24 @@ import androidx.room.Delete
 @Dao
 interface UserDao {
 
+    // ✅ сохраняем или обновляем юзера
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertUser(user: UserEntity)
+    suspend fun insert(user: UserEntity)
 
-
+    // ✅ находим юзера по email
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     suspend fun getUserByEmail(email: String): UserEntity?
 
+    // ✅ проверяем логин
     @Query("SELECT * FROM users WHERE email = :email AND password = :password LIMIT 1")
     suspend fun login(email: String, password: String): UserEntity?
 
-    // 🔹 находим юзера по email (для удаления)
+    // ✅ находим юзера по email (для удаления)
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     suspend fun findByEmail(email: String): UserEntity?
 
-    // 🔹 удаляем юзера
+    // ✅ удаляем юзера
     @Delete
     suspend fun delete(user: UserEntity)
 }
+
