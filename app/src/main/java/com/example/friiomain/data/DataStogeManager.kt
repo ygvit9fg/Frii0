@@ -15,6 +15,7 @@ class DataStoreManager(private val context: Context) {
     companion object {
         private val USER_EMAIL_KEY = stringPreferencesKey("user_email")
         private val USER_NAME_KEY = stringPreferencesKey("user_name")
+        private val USER_PREFERENCES_KEY = stringPreferencesKey("user_preferences")
     }
 
     // читаем email
@@ -25,6 +26,11 @@ class DataStoreManager(private val context: Context) {
     // читаем имя
     val userName: Flow<String?> = context.dataStore.data.map { preferences ->
         preferences[USER_NAME_KEY]
+    }
+
+    // читаем предпочтения (список строк)
+    val userPreferences: Flow<List<String>> = context.dataStore.data.map { preferences ->
+        preferences[USER_PREFERENCES_KEY]?.split(",") ?: emptyList()
     }
 
     // сохраняем email
@@ -38,6 +44,13 @@ class DataStoreManager(private val context: Context) {
     suspend fun saveUserName(name: String) {
         context.dataStore.edit { preferences ->
             preferences[USER_NAME_KEY] = name
+        }
+    }
+
+    // сохраняем предпочтения
+    suspend fun saveUserPreferences(preferencesList: List<String>) {
+        context.dataStore.edit { preferences ->
+            preferences[USER_PREFERENCES_KEY] = preferencesList.joinToString(",")
         }
     }
 
@@ -55,7 +68,7 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
-    // полностью очищаем всё (и имя, и email)
+    // полностью очищаем всё (и имя, и email, и preferences)
     suspend fun clearAll() {
         context.dataStore.edit { preferences ->
             preferences.clear()

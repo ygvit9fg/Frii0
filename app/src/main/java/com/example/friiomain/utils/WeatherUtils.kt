@@ -10,6 +10,7 @@ import com.example.friiomain.data.WeatherResponse
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.tasks.await
 
+
 suspend fun loadWeather(context: Context): WeatherResponse? {
     return try {
         val hasPermission = ContextCompat.checkSelfPermission(
