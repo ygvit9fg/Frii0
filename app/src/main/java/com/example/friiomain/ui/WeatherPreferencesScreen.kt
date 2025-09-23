@@ -24,13 +24,41 @@ fun WeatherPreferencesScreen(
     name: String,
     email: String,
     password: String,
-    username: String
+    username: String,
+    currentPreferences: String? = null,
+    isEditMode: Boolean = false
 ) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val userDao = db.userDao()
     val sessionManager = remember { SessionManager(context) }
     val coroutineScope = rememberCoroutineScope()
+
+    var currentUser by remember { mutableStateOf<UserEntity?>(null) }
+
+    // Загружаем текущего пользователя из Room
+    LaunchedEffect(email) {
+        currentUser = withContext(Dispatchers.IO) {
+            userDao.getUserByEmail(email)
+        }
+    }
+
+    // Список выбранных предпочтений
+    var selectedPreferences = remember { mutableStateListOf<String>() }
+
+    LaunchedEffect(currentUser) {
+        currentUser?.preferences
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?.let {
+                selectedPreferences.clear()
+                selectedPreferences.addAll(it)
+            }
+    }
+
+// Проверка на минимум один выбор только при регистрации
+    val canSave = isEditMode || selectedPreferences.isNotEmpty()
 
     val preferencesList = listOf(
         "Loves rainy weather",
@@ -45,15 +73,11 @@ fun WeatherPreferencesScreen(
         "Environmentally conscious"
     )
 
-    val selectedPreferences = remember { mutableStateListOf<String>() }
-
     Box(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "Выберите интересы",
                 style = MaterialTheme.typography.headlineMedium
@@ -83,32 +107,38 @@ fun WeatherPreferencesScreen(
 
             Button(
                 onClick = {
-                    if (selectedPreferences.isEmpty()) {
+                    if (!isEditMode && selectedPreferences.isEmpty()) {
                         Toast.makeText(context, "Выберите хотя бы один пункт", Toast.LENGTH_LONG).show()
-                    } else {
-                        coroutineScope.launch(Dispatchers.IO) {
-                            val newUser = UserEntity(
-                                email = email,
-                                name = name,
-                                password = password,
-                                username = username,
-                                preferences = selectedPreferences.joinToString(", ")
-                            )
-                            userDao.insert(newUser)
-                            sessionManager.saveUser(email, name)
+                        return@Button
+                    }
 
-                            withContext(Dispatchers.Main) {
-                                navController.navigate("home/$email/$name") {
-                                    popUpTo("register") { inclusive = true }
-                                }
+                    coroutineScope.launch(Dispatchers.IO) {
+                        val updatedUser = currentUser?.copy(
+                            preferences = selectedPreferences.joinToString(", ")
+                        ) ?: UserEntity(
+                            email = email,
+                            name = name,
+                            password = password,
+                            username = username,
+                            preferences = selectedPreferences.joinToString(", ")
+                        )
+
+                        // Сохраняем или обновляем
+                        userDao.update(updatedUser)
+                        sessionManager.saveUser(email, name)
+
+                        withContext(Dispatchers.Main) {
+                            navController.navigate("home/$email/$name") {
+                                popUpTo("register") { inclusive = true }
                             }
                         }
                     }
                 },
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             ) {
-                Text("Завершить")
+                Text("Сохранить")
             }
         }
     }
 }
+

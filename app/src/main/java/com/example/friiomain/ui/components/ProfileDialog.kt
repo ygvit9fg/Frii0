@@ -65,7 +65,7 @@ fun ProfileDialog(
                         .fillMaxSize()
                         .padding(16.dp)
                 ) {
-                    // 🔹 Заголовок
+                    // Заголовок
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -87,7 +87,7 @@ fun ProfileDialog(
 
                     Spacer(Modifier.height(16.dp))
 
-                    // 🔹 Аватарка
+                    // Аватарка
                     Box(
                         modifier = Modifier
                             .size(80.dp)
@@ -109,7 +109,7 @@ fun ProfileDialog(
 
                     Spacer(Modifier.height(24.dp))
 
-                    // 🔹 Статистика
+                    // Статистика
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
@@ -121,7 +121,7 @@ fun ProfileDialog(
 
                     Spacer(Modifier.height(24.dp))
 
-                    // 🔹 Preferences
+                    // Preferences
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Settings, contentDescription = "Prefs", tint = Color.Black, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
@@ -181,7 +181,7 @@ fun ProfileDialog(
 
                     Spacer(Modifier.height(24.dp))
 
-                    // 🔹 Экология
+                    // Экология
                     val treesSaved = (monthlyKm / 75.0 + monthlyCO2 / 15.0) / 2
                     Column(
                         modifier = Modifier
@@ -213,7 +213,7 @@ fun ProfileDialog(
 
                     Spacer(Modifier.height(24.dp))
 
-                    // 🔹 Ачивки
+                    // Ачивки
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("🏅", fontSize = 18.sp)
                         Spacer(Modifier.width(4.dp))

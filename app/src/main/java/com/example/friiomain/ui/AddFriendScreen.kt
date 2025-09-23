@@ -148,7 +148,7 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
                 Button(
                     onClick = {
                         coroutineScope.launch(Dispatchers.IO) {
-                            val user = userDao.findByEmail(currentUserEmail)
+                            val user = userDao.getUserByEmail(currentUserEmail)
                             if (user != null) {
                                 userDao.delete(user)
                                 sessionManager.logout()

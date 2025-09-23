@@ -5,12 +5,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.friiomain.data.DataStoreManager
+import kotlinx.coroutines.launch
 
 @Composable
 fun UsernameScreen(navController: NavController, name: String, email: String, password: String) {
     var username by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
+    val dataStoreManager = remember { DataStoreManager(context) }
+    val scope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -39,6 +46,12 @@ fun UsernameScreen(navController: NavController, name: String, email: String, pa
 
             Button(
                 onClick = {
+
+                    scope.launch {
+                        dataStoreManager.saveUserUsername(username)
+                    }
+
+
                     navController.navigate(
                         "preferences?name=$name&email=$email&password=$password&username=$username"
                     )

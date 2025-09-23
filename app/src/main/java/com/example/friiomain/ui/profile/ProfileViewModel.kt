@@ -26,6 +26,10 @@ class ProfileViewModel @Inject constructor(
 
     val userPreferences: StateFlow<List<String>> = dataStoreManager.userPreferences
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    val userUsername: StateFlow<String> = dataStoreManager.userUsername
+        .map { it ?: "" }
+        .stateIn(viewModelScope, SharingStarted.Lazily, "")
 }
 
 class ProfileViewModelFactory(

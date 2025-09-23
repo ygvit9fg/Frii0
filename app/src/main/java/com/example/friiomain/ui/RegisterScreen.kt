@@ -7,12 +7,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.friiomain.data.DataStoreManager
+import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
+
 
 @Composable
 fun RegisterScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
+    val dataStoreManager = remember { DataStoreManager(context) }
+    val scope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -59,7 +67,17 @@ fun RegisterScreen(navController: NavController) {
 
             Button(
                 onClick = {
-                    //  после данных идём на UsernameScreen
+
+                    scope.launch {
+                        dataStoreManager.saveUserName(name)
+                        dataStoreManager.saveUserEmail(email)
+
+                        dataStoreManager.saveUserUsername(email.substringBefore("@"))
+
+                        dataStoreManager.saveUserPreferences(emptyList())
+                    }
+
+
                     navController.navigate("username?name=$name&email=$email&password=$password")
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -93,6 +111,4 @@ fun RegisterScreen(navController: NavController) {
         }
     }
 }
-
-
 
