@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.widget.Toast
+import com.example.friiomain.data.DataStoreManager
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,7 +34,7 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
     val userDao = db.userDao()
     val friendDao = db.friendDao()
     val coroutineScope = rememberCoroutineScope()
-    val sessionManager = remember { SessionManager(context) } // SessionManager
+    val sessionManager = remember { SessionManager(context) }
 
     var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var friends by remember { mutableStateOf(listOf<FriendEntity>()) }
@@ -88,7 +89,7 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Секция: Мои друзья
+            //Мои друзья
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text("Мои друзья", style = MaterialTheme.typography.titleSmall)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -127,14 +128,27 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Нижний блок: кнопки (Выйти / Удалить)
+            // Выйти / Удалить
             Column {
-                //  Кнопка выхода с очисткой сессии
+
                 Button(
                     onClick = {
-                        sessionManager.logout() // очищаем сессию
-                        navController.navigate("login") {
-                            popUpTo("home/{email}/{name}") { inclusive = true }
+                        coroutineScope.launch {
+                            try {
+                                withContext(Dispatchers.IO) {
+                                    val ds = DataStoreManager(context)
+                                    ds.clearAll() // удаляем session/email/name
+                                }
+                                withContext(Dispatchers.Main) {
+                                    navController.navigate("login") {
+                                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "Ошибка при выходе: ${e.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -142,21 +156,33 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
                     Text("Выйти из аккаунта")
                 }
 
+
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Кнопка удаления аккаунта
                 Button(
                     onClick = {
-                        coroutineScope.launch(Dispatchers.IO) {
-                            val user = userDao.getUserByEmail(currentUserEmail)
-                            if (user != null) {
-                                userDao.delete(user)
-                                sessionManager.logout()
+                        coroutineScope.launch {
+                            try {
+                                withContext(Dispatchers.IO) {
+                                    val user = userDao.getUserByEmail(currentUserEmail) // используем getUserByEmail — тот же метод, что в других местах
+                                    if (user != null) {
+                                        userDao.delete(user)
+                                    }
+
+                                    val ds = DataStoreManager(context)
+                                    ds.clearAll() // suspend
+                                }
+
                                 withContext(Dispatchers.Main) {
                                     Toast.makeText(context, "Аккаунт удален", Toast.LENGTH_LONG).show()
                                     navController.navigate("register") {
-                                        popUpTo("home/{email}/{name}") { inclusive = true }
+                                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
                                     }
+                                }
+                            } catch (e: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "Ошибка при удалении: ${e.message}", Toast.LENGTH_LONG).show()
                                 }
                             }
                         }
@@ -166,6 +192,8 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
                 ) {
                     Text("Удалить аккаунт")
                 }
+
+
             }
         }
     }

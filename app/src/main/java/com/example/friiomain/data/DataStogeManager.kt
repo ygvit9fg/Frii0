@@ -19,6 +19,8 @@ class DataStoreManager(private val context: Context) {
         private val USER_PREFERENCES_KEY = stringPreferencesKey("user_preferences")
     }
 
+
+
     // читаем username
     val userUsername: Flow<String?> = context.dataStore.data.map { preferences ->
         preferences[USER_USERNAME_KEY]
@@ -96,4 +98,5 @@ class DataStoreManager(private val context: Context) {
         }
     }
 }
+
 

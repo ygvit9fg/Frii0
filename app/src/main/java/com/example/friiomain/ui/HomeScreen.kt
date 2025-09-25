@@ -38,37 +38,51 @@ import com.example.friiomain.data.AppDatabase
 import com.example.friiomain.data.UserEntity
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.collectAsState
+import androidx.hilt.navigation.compose.hiltViewModel
+
+import com.example.friiomain.ui.profile.ProfileViewModel
 
 
 @Composable
-fun HomeScreen(navController: NavController, email: String, user: String) {
+fun HomeScreen(navController: NavController, email: String, name: String) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-
+    // 🔹 Исправление: создаем viewModel
+    val viewModel: ProfileViewModel = hiltViewModel()
+    val usernameFlow = viewModel.userUsername
 
     var weather by remember { mutableStateOf<WeatherResponse?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // 🔥 Вместо DataStore читаем из Room
     val db = AppDatabase.getDatabase(context)
     val userDao = db.userDao()
     var currentUser by remember { mutableStateOf<UserEntity?>(null) }
 
-    // Загружаем данные юзера
     LaunchedEffect(email) {
         currentUser = withContext(Dispatchers.IO) {
             userDao.getUserByEmail(email)
         }
+
+        // fallback если в базе пусто
+        if (currentUser == null && name.isNotBlank()) {
+            currentUser = UserEntity(
+                email = email,
+                name = name,
+                password = "",
+                username = "",
+                preferences = ""
+            )
+        }
+
     }
 
-
-    // Состояния для диалогов
+    // 🔹 Состояния для диалогов
     var showProfileDialog by remember { mutableStateOf(false) }
     var showNotificationsDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
 
-    //  Лаунчер для разрешений
+    // 🔹 Лаунчер для разрешений
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -84,7 +98,7 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
         }
     }
 
-    //  Проверка разрешений
+    // 🔹 Проверка разрешений
     LaunchedEffect(Unit) {
         val permission = Manifest.permission.ACCESS_FINE_LOCATION
         when {
@@ -99,13 +113,11 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
                 }
             }
 
-            else -> {
-                locationPermissionLauncher.launch(permission)
-            }
+            else -> locationPermissionLauncher.launch(permission)
         }
     }
 
-
+    // 🔹 Диалог профиля
     if (showProfileDialog && currentUser != null) {
         val preferences = currentUser!!.preferences
             ?.split(",")
@@ -114,21 +126,20 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
             ?: emptyList()
 
         ProfileDialog(
-            name = currentUser!!.name,                   // имя пользователя
-            username = currentUser!!.username ?: "",     // username
+            name = currentUser!!.name,
+            usernameFlow = usernameFlow,
             email = currentUser!!.email,
             preferences = preferences,
             onDismiss = { showProfileDialog = false },
             onEditPreferences = {
-                val currentPrefs = currentUser!!.preferences ?: ""
-                navController.navigate(
-                    "preferences?email=${currentUser!!.email}&currentPreferences=$currentPrefs&isEditMode=true"
-                )
+                val prefs = preferences.joinToString(",")
+                navController.navigate("preferences_edit/${currentUser!!.email}/$prefs")
             }
         )
+
     }
 
-
+    // 🔹 Диалог уведомлений
     if (showNotificationsDialog) {
         AlertDialog(
             onDismissRequest = { showNotificationsDialog = false },
@@ -138,6 +149,7 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
         )
     }
 
+    // 🔹 Диалог настроек
     if (showSettingsDialog) {
         AlertDialog(
             onDismissRequest = { showSettingsDialog = false },
@@ -147,6 +159,9 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
         )
     }
 
+    // 🔹 Остальная UI часть без изменений
+
+
     // UI
     Column(
         modifier = Modifier
@@ -155,11 +170,13 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         HomeTopBar(
-            user = currentUser?.name ?: "",
+            user = currentUser?.name ?: name,
             onProfileClick = { showProfileDialog = true },
             onNotificationsClick = { showNotificationsDialog = true },
             onSettingsClick = { showSettingsDialog = true }
         )
+
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -394,6 +411,20 @@ fun HomeScreen(navController: NavController, email: String, user: String) {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

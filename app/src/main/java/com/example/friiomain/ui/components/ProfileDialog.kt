@@ -26,12 +26,15 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.runtime.collectAsState
+import kotlinx.coroutines.flow.StateFlow
+
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProfileDialog(
     name: String,
-    username: String,
+    usernameFlow: StateFlow<String>,
     email: String,
     preferences: List<String>,
     friendsCount: Int = 12,
@@ -42,84 +45,63 @@ fun ProfileDialog(
     onDismiss: () -> Unit,
     onEditPreferences: () -> Unit = {}
 ) {
+
+    val username by usernameFlow.collectAsState()
+    val displayUsername = if (username.isNotBlank()) "@$username" else ""
     var showAllPrefsDialog by remember { mutableStateOf(false) }
+
+
 
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        AnimatedVisibility(
-            visible = true,
-            enter = fadeIn(animationSpec = tween(200)) + scaleIn(initialScale = 0.95f),
-            exit = fadeOut(animationSpec = tween(150)) + scaleOut(targetScale = 0.95f)
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.9f),
+            shape = RoundedCornerShape(20.dp),
+            color = Color.White
         ) {
-            Surface(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.9f),
-                shape = RoundedCornerShape(20.dp),
-                color = Color.White
+                    .fillMaxSize()
+                    .padding(16.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
+                // Заголовок
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Заголовок
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Person,
-                                contentDescription = "Profile",
-                                tint = Color.Gray
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text("Profile", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                        }
-                        IconButton(onClick = onDismiss) {
-                            Icon(Icons.Default.Close, contentDescription = "Close")
-                        }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Person, contentDescription = "Profile", tint = Color.Gray)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Profile", fontSize = 16.sp, fontWeight = FontWeight.Medium)
                     }
-
-                    Spacer(Modifier.height(16.dp))
-
-                    // Аватарка
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                            .background(Color.Gray),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = name.take(2).uppercase(),
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
                     }
-                    Spacer(Modifier.height(8.dp))
-                    Text("@$username", fontSize = 14.sp, color = Color.Gray)
-                    Text(name, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Text(email, fontSize = 14.sp, color = Color.Gray)
+                }
 
-                    Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(16.dp))
 
-                    // Статистика
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        StatBlock(friendsCount, "Friends", Color(0xFF1976D2))
-                        StatBlock(walksCount, "Walks", Color(0xFF2E7D32))
-                        StatBlock(climateMatches, "Climate Actions", Color(0xFF9C27B0))
-                    }
+                // Аватарка
+                AvatarSection(name = name)
 
-                    Spacer(Modifier.height(24.dp))
+
+                Spacer(Modifier.height(8.dp))
+
+                // Отображаем username с @ только если есть
+                val username by usernameFlow.collectAsState()
+                val displayUsername = if (username.isNotBlank()) "@$username" else ""
+                Text(displayUsername, fontSize = 14.sp, color = Color.Gray)
+
+
+                Text(name, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(email, fontSize = 14.sp, color = Color.Gray)
+
+                Spacer(Modifier.height(24.dp))
 
                     // Preferences
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -238,7 +220,7 @@ fun ProfileDialog(
                     Spacer(Modifier.height(24.dp))
 
                     Button(
-                        onClick = onEditPreferences,
+                        onClick = onEditPreferences,   // ← вот это ты показал
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -250,7 +232,7 @@ fun ProfileDialog(
             }
         }
     }
-}
+
 
 @Composable
 private fun StatBlock(value: Int, label: String, color: Color) {
@@ -272,5 +254,6 @@ private fun PreferenceChip(text: String) {
             .padding(horizontal = 8.dp, vertical = 4.dp)
     )
 }
+
 
 

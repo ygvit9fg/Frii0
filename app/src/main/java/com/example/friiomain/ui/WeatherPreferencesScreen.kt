@@ -17,6 +17,8 @@ import com.example.friiomain.utils.SessionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.friiomain.data.DataStoreManager
+
 
 @Composable
 fun WeatherPreferencesScreen(
@@ -24,10 +26,10 @@ fun WeatherPreferencesScreen(
     name: String,
     email: String,
     password: String,
-    username: String,
     currentPreferences: String? = null,
+    username: String,
     isEditMode: Boolean = false
-) {
+)  {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val userDao = db.userDao()
@@ -36,14 +38,14 @@ fun WeatherPreferencesScreen(
 
     var currentUser by remember { mutableStateOf<UserEntity?>(null) }
 
-    // Загружаем текущего пользователя из Room
+    //Room
     LaunchedEffect(email) {
         currentUser = withContext(Dispatchers.IO) {
             userDao.getUserByEmail(email)
         }
     }
 
-    // Список выбранных предпочтений
+
     var selectedPreferences = remember { mutableStateListOf<String>() }
 
     LaunchedEffect(currentUser) {
@@ -57,7 +59,7 @@ fun WeatherPreferencesScreen(
             }
     }
 
-// Проверка на минимум один выбор только при регистрации
+
     val canSave = isEditMode || selectedPreferences.isNotEmpty()
 
     val preferencesList = listOf(
@@ -107,37 +109,56 @@ fun WeatherPreferencesScreen(
 
             Button(
                 onClick = {
-                    if (!isEditMode && selectedPreferences.isEmpty()) {
+                    if (selectedPreferences.isEmpty()) {
                         Toast.makeText(context, "Выберите хотя бы один пункт", Toast.LENGTH_LONG).show()
                         return@Button
                     }
 
-                    coroutineScope.launch(Dispatchers.IO) {
-                        val updatedUser = currentUser?.copy(
-                            preferences = selectedPreferences.joinToString(", ")
-                        ) ?: UserEntity(
-                            email = email,
-                            name = name,
-                            password = password,
-                            username = username,
-                            preferences = selectedPreferences.joinToString(", ")
-                        )
+                    coroutineScope.launch {
+                        try {
+                            // DB — в IO
+                            withContext(Dispatchers.IO) {
+                                val updatedUser = currentUser?.copy(
+                                    preferences = selectedPreferences.joinToString(", ")
+                                ) ?: UserEntity(
+                                    email = email,
+                                    name = name,
+                                    password = password,
+                                    username = name,
+                                    preferences = selectedPreferences.joinToString(", ")
+                                )
 
-                        // Сохраняем или обновляем
-                        userDao.update(updatedUser)
-                        sessionManager.saveUser(email, name)
+                                if (currentUser == null) {
+                                    userDao.insert(updatedUser)
+                                } else {
+                                    userDao.update(updatedUser)
+                                }
 
-                        withContext(Dispatchers.Main) {
-                            navController.navigate("home/$email/$name") {
-                                popUpTo("register") { inclusive = true }
+
+                                sessionManager.saveUser(email, name)
+                            }
+
+                            // Навигация и UI в Main
+                            withContext(Dispatchers.Main) {
+                                navController.navigate("home/$email/$name") {
+                                    // безопасный popUpTo — очищаем стек до стартового экрана
+                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Ошибка при сохранении: ${e.message}", Toast.LENGTH_LONG).show()
                             }
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
             ) {
                 Text("Сохранить")
             }
+
         }
     }
 }

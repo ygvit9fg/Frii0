@@ -73,6 +73,12 @@ import java.util.Properties
 dependencies {
 
 
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("androidx.compose.runtime:runtime-livedata:1.6.0")
+// для collectAsState
+
+    implementation("io.coil-kt:coil-compose:2.3.0")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
@@ -81,7 +87,11 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.0")
 
 // Hilt
+    implementation("com.google.dagger:hilt-android:2.47")
+    kapt("com.google.dagger:hilt-compiler:2.47")
 
+    // Compose Hilt
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
 // Jetpack Navigation (для Compose)
     implementation("androidx.navigation:navigation-compose:2.8.0")
 

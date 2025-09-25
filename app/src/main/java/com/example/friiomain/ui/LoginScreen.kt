@@ -12,6 +12,8 @@ import com.example.friiomain.data.AppDatabase
 import com.example.friiomain.utils.SessionManager
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
+import com.example.friiomain.data.DataStoreManager
+
 
 @Composable
 fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -> Unit) {
@@ -60,13 +62,19 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -
                     coroutineScope.launch {
                         val user = userDao.login(email, password)
                         if (user != null) {
-                            // сохраняем сессию
-                            sessionManager.saveUser(user.email, user.name)
+                            val dataStoreManager = DataStoreManager(context)
+                            coroutineScope.launch {
+                                dataStoreManager.saveUserEmail(user.email)
+                                dataStoreManager.saveUserName(user.name)
+                                dataStoreManager.saveUserUsername(user.username ?: user.email.substringBefore("@"))
+                            }
 
                             onLoginSuccess(user.email, user.name)
                             navController.navigate("home/${user.email}/${user.name}") {
                                 popUpTo("login") { inclusive = true }
                             }
+
+
                         } else {
                             Toast.makeText(context, "Неверные данные", Toast.LENGTH_LONG).show()
                         }
@@ -76,6 +84,7 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -
             ) {
                 Text("Войти")
             }
+
 
             Spacer(modifier = Modifier.height(12.dp))
 

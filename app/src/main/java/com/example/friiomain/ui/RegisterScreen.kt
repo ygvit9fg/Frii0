@@ -10,6 +10,8 @@ import androidx.navigation.NavController
 import com.example.friiomain.data.DataStoreManager
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
+import com.example.friiomain.data.AppDatabase
+import com.example.friiomain.data.UserEntity
 
 
 @Composable
@@ -37,6 +39,8 @@ fun RegisterScreen(navController: NavController) {
             )
 
             Spacer(modifier = Modifier.height(24.dp))
+
+            var username by remember { mutableStateOf("") }
 
             OutlinedTextField(
                 value = name,
@@ -67,23 +71,34 @@ fun RegisterScreen(navController: NavController) {
 
             Button(
                 onClick = {
-
                     scope.launch {
-                        dataStoreManager.saveUserName(name)
+                        val db = AppDatabase.getDatabase(context)
+                        val userDao = db.userDao()
+
+
+                        val newUser = UserEntity(
+                            email = email,
+                            name = name,
+                            username = "",
+                            password = password,
+                            preferences = ""
+                        )
+                        userDao.insert(newUser)
+
+                        // сохраняем email и имя
                         dataStoreManager.saveUserEmail(email)
-
-                        dataStoreManager.saveUserUsername(email.substringBefore("@"))
-
+                        dataStoreManager.saveUserName(name)
                         dataStoreManager.saveUserPreferences(emptyList())
+
+                        // UsernameScreen
+                        navController.navigate("username?name=$name&email=$email&password=$password")
                     }
-
-
-                    navController.navigate("username?name=$name&email=$email&password=$password")
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Далее")
             }
+
 
             Spacer(modifier = Modifier.height(12.dp))
 
