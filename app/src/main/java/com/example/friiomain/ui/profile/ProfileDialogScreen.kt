@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 
 
 
+
 @Composable
 fun ProfileDialogScreen(onDismiss: () -> Unit) {
     val viewModel: ProfileViewModel = hiltViewModel()
@@ -17,13 +18,18 @@ fun ProfileDialogScreen(onDismiss: () -> Unit) {
     val email by viewModel.userEmail.collectAsState()
     val preferences by viewModel.userPreferences.collectAsState()
 
+    // -> ВАЖНО: здесь мы передаём заглушки для avatarBase64 и onAvatarChange,
+    // чтобы код компилировался. Реальную логику сохранения/обновления делай в HomeScreen
     ProfileDialog(
-        name = viewModel.userName.collectAsState().value,
-        usernameFlow = viewModel.userUsername, // <-- передаём Flow
-        email = viewModel.userEmail.collectAsState().value,
-        preferences = viewModel.userPreferences.collectAsState().value,
+        name = name,
+        usernameFlow = viewModel.userUsername,
+        email = email,
+        preferences = preferences,
+        avatarBase64 = null,    // заглушка — HomeScreen должен передать реальное значение
+        onAvatarChange = {},    // заглушка — HomeScreen должен обработать сохранение
         onDismiss = onDismiss
     )
 }
+
 
 

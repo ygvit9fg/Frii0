@@ -28,6 +28,13 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.runtime.collectAsState
 import kotlinx.coroutines.flow.StateFlow
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import com.example.friiomain.utils.bitmapToBase64
+import com.example.friiomain.utils.base64ToBitmap
+
+
+
 
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -43,7 +50,9 @@ fun ProfileDialog(
     monthlyKm: Double = 50.0,
     monthlyCO2: Double = 7.2,
     onDismiss: () -> Unit,
-    onEditPreferences: () -> Unit = {}
+    onEditPreferences: () -> Unit = {},
+    avatarBase64: String?,
+    onAvatarChange: (String?) -> Unit
 ) {
 
     val username by usernameFlow.collectAsState()
@@ -87,12 +96,17 @@ fun ProfileDialog(
                 Spacer(Modifier.height(16.dp))
 
                 // Аватарка
-                AvatarSection(name = name)
+                AvatarSection(
+                    name = name,
+                    avatarBase64 = avatarBase64,
+                    onAvatarChange = onAvatarChange
+                )
+
 
 
                 Spacer(Modifier.height(8.dp))
 
-                // Отображаем username с @ только если есть
+
                 val username by usernameFlow.collectAsState()
                 val displayUsername = if (username.isNotBlank()) "@$username" else ""
                 Text(displayUsername, fontSize = 14.sp, color = Color.Gray)
@@ -187,8 +201,8 @@ fun ProfileDialog(
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "You’ve saved the equivalent of ${"%.1f".format(treesSaved)} tree saplings this month",
-                            fontSize = 12.sp,
+                            "🌱 You’ve saved the equivalent of ${"%.1f".format(treesSaved)} tree saplings this month",
+                            fontSize = 11.sp,
                             color = Color.Gray
                         )
                     }
@@ -220,7 +234,7 @@ fun ProfileDialog(
                     Spacer(Modifier.height(24.dp))
 
                     Button(
-                        onClick = onEditPreferences,   // ← вот это ты показал
+                        onClick = onEditPreferences,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     ) {

@@ -3,6 +3,7 @@ package com.example.friiomain.data
 import android.text.LoginFilter
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlin.io.encoding.Base64
 
 @Entity(tableName = "users")
 data class UserEntity(
@@ -13,5 +14,6 @@ data class UserEntity(
     val preferredWeather: String? = null,
     val lastLogin: Long = System.currentTimeMillis(),
     val username: String? = null,
-    val preferences: String? = null
+    val preferences: String? = null,
+    val avatarBase64: String? = null
 )

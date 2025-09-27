@@ -18,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.example.friiomain.data.DataStoreManager
+import java.net.URLDecoder
 
 
 @Composable
@@ -49,14 +50,15 @@ fun WeatherPreferencesScreen(
     var selectedPreferences = remember { mutableStateListOf<String>() }
 
     LaunchedEffect(currentUser) {
-        currentUser?.preferences
-            ?.split(",")
-            ?.map { it.trim() }
-            ?.filter { it.isNotEmpty() }
-            ?.let {
-                selectedPreferences.clear()
-                selectedPreferences.addAll(it)
-            }
+        if (currentUser == null && !currentPreferences.isNullOrBlank()) {
+            val decoded = URLDecoder.decode(currentPreferences, "UTF-8")
+            selectedPreferences.clear()
+            selectedPreferences.addAll(
+                decoded.split(",")
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+            )
+        }
     }
 
 

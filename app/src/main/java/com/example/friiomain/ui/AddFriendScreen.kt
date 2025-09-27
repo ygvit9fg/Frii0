@@ -53,7 +53,7 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Мой профиль", style = MaterialTheme.typography.titleMedium) },
+                title = { Text("Friends", style = MaterialTheme.typography.titleMedium) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Назад")
