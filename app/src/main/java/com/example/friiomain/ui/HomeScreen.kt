@@ -188,7 +188,7 @@ fun HomeScreen(navController: NavController, email: String, name: String) {
 
 
 
-    // Остальная UI часть без изменений
+
 
 
     // UI

@@ -55,8 +55,6 @@ fun ProfileDialog(
     onAvatarChange: (String?) -> Unit
 ) {
 
-    val username by usernameFlow.collectAsState()
-    val displayUsername = if (username.isNotBlank()) "@$username" else ""
     var showAllPrefsDialog by remember { mutableStateOf(false) }
 
 

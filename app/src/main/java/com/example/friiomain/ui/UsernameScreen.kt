@@ -47,6 +47,9 @@ fun UsernameScreen(navController: NavController, name: String, email: String, pa
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(onClick = {
+                scope.launch {
+                    dataStoreManager.saveUserUsername(username)
+                }
                 navController.navigate("preferences/$email/$password/$name/$username") {
                     popUpTo("username") { inclusive = true }
                 }
