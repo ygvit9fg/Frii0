@@ -51,9 +51,10 @@ fun WeatherPreferencesScreen(
 
     var selectedPreferences = remember { mutableStateListOf<String>() }
 
-    LaunchedEffect(currentUser) {
-        if (currentUser == null && !currentPreferences.isNullOrBlank()) {
-            val decoded = URLDecoder.decode(currentPreferences, "UTF-8")
+    LaunchedEffect(currentUser, currentPreferences) {
+        val prefsString = currentUser?.preferences ?: currentPreferences
+        if (!prefsString.isNullOrBlank()) {
+            val decoded = URLDecoder.decode(prefsString, "UTF-8")
             selectedPreferences.clear()
             selectedPreferences.addAll(
                 decoded.split(",")
@@ -62,6 +63,7 @@ fun WeatherPreferencesScreen(
             )
         }
     }
+
 
 
     val canSave = isEditMode || selectedPreferences.isNotEmpty()
@@ -154,10 +156,10 @@ fun WeatherPreferencesScreen(
                             // Навигация и UI в Main
                             withContext(Dispatchers.Main) {
                                 navController.navigate("home/$email/$name") {
-                                    // безопасный popUpTo — очищаем стек до стартового экрана
-                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                    popUpTo("home/{email}/{name}") { inclusive = true }
                                 }
                             }
+
                         } catch (e: Exception) {
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(context, "Ошибка при сохранении: ${e.message}", Toast.LENGTH_LONG).show()

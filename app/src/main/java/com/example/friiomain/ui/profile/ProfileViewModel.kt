@@ -48,7 +48,15 @@ class ProfileViewModel @Inject constructor(
             dataStore.clearAll()
         }
     }
+
+    fun updateUserPreferences(prefs: List<String>) {
+        viewModelScope.launch {
+            dataStore.saveUserPreferences(prefs)
+        }
+    }
 }
+
+
 
 class ProfileViewModelFactory(
     private val dataStore: DataStoreManager

@@ -227,12 +227,11 @@ fun ProfileDialog(
                     Spacer(Modifier.height(24.dp))
 
                 Button(
-                    onClick = onEditPreferences,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    onClick = {
+                        onDismiss()
+                        navController.navigate("editPreferences")
+                    }
                 ) {
-                    Icon(Icons.Default.Settings, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
                     Text("Edit Preferences")
                 }
             }

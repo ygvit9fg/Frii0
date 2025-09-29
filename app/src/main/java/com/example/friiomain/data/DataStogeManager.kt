@@ -17,7 +17,21 @@ class DataStoreManager(private val context: Context) {
         private val USER_USERNAME_KEY = stringPreferencesKey("user_username")
         private val USER_PASSWORD_KEY = stringPreferencesKey("user_password")
         private val USER_PREFERENCES_KEY = stringPreferencesKey("user_preferences")
+
+        private val USER_AVATAR_KEY = stringPreferencesKey("user_avatar")
     }
+
+
+    val userAvatar: Flow<String?> = dataStore.data.map { preferences ->
+        preferences[USER_AVATAR_KEY]
+    }
+
+    suspend fun saveUserAvatar(avatarBase64: String) {
+        dataStore.edit { preferences ->
+            preferences[USER_AVATAR_KEY] = avatarBase64
+        }
+    }
+
 
     // чтение и запись предпочтений
     val userPreferences: Flow<List<String>> = context.dataStore.data.map { prefs ->
