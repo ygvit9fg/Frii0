@@ -13,6 +13,7 @@ import com.example.friiomain.utils.SessionManager
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import com.example.friiomain.data.DataStoreManager
+import kotlinx.coroutines.flow.first
 
 
 @Composable
@@ -60,21 +61,22 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        val user = userDao.login(email, password)
-                        if (user != null) {
-                            val dataStoreManager = DataStoreManager(context)
+                        val user = userDao.getUserByEmail(email) // ищем только по email
+                        val dataStoreManager = DataStoreManager(context)
+                        val savedPassword = dataStoreManager.userPassword.first() ?: ""
+
+                        if (user != null && password == savedPassword) {
                             coroutineScope.launch {
                                 dataStoreManager.saveUserEmail(user.email)
                                 dataStoreManager.saveUserName(user.name)
                                 dataStoreManager.saveUserUsername(user.username ?: user.email.substringBefore("@"))
+                                dataStoreManager.saveUserPassword(savedPassword)  // гарантируем синхронизацию
                             }
 
                             onLoginSuccess(user.email, user.name)
                             navController.navigate("home/${user.email}/${user.name}") {
                                 popUpTo("login") { inclusive = true }
                             }
-
-
                         } else {
                             Toast.makeText(context, "Неверные данные", Toast.LENGTH_LONG).show()
                         }
@@ -84,6 +86,7 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -
             ) {
                 Text("Войти")
             }
+
 
 
             Spacer(modifier = Modifier.height(12.dp))
