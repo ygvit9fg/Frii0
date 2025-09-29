@@ -1,131 +1,229 @@
-
 package com.example.friiomain.ui.components
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.navigation.NavController
-import com.example.friiomain.data.DataStoreManager
-import com.example.friiomain.data.UserDao
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.friiomain.ui.profile.ProfileViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.example.friiomain.data.UserDao
+import com.example.friiomain.data.UserEntity
+
 
 @Composable
 fun SettingsDialog(
-    navController: NavController,
+    onDismiss: () -> Unit,
+    viewModel: ProfileViewModel = hiltViewModel(),
     userDao: UserDao,
-    currentUserEmail: String,
-    onDismiss: () -> Unit
+    userEmail: String
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    // читаем данные из ViewModel
+    val name by viewModel.userName.collectAsState()
+    val email by viewModel.userEmail.collectAsState()
+
+    // локальное состояние для пароля (его нет в DataStore, поэтому подгружаем из Room)
+    var password by remember { mutableStateOf("") }
+
+    // состояния для редактирования
+    var editingName by remember { mutableStateOf(false) }
+    var editingPassword by remember { mutableStateOf(false) }
+    var newName by remember { mutableStateOf(name) }
+    var newPassword by remember { mutableStateOf("") }
+
+    var notificationsEnabled by remember { mutableStateOf(true) }
+
+    // Загружаем пароль из БД при открытии
+    LaunchedEffect(userEmail) {
+        withContext(Dispatchers.IO) {
+            val currentUser = userDao.getUserByEmail(userEmail)
+            if (currentUser != null) {
+                password = currentUser.password
+            }
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.9f),
-            shape = RoundedCornerShape(20.dp),
-            color = Color.White
+            shape = RoundedCornerShape(16.dp),
+            tonalElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+
                 // Заголовок
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Настройки", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("Настройки", style = MaterialTheme.typography.titleLarge)
                     IconButton(onClick = onDismiss) {
                         Icon(Icons.Default.Close, contentDescription = "Закрыть")
                     }
                 }
 
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.height(12.dp))
 
-                // Выйти / Удалить
-                Column {
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                try {
-                                    withContext(Dispatchers.IO) {
-                                        val ds = DataStoreManager(context)
-                                        ds.clearAll() // удаляем session/email/name
-                                    }
-                                    withContext(Dispatchers.Main) {
-                                        navController.navigate("login") {
-                                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                                        }
-                                    }
-                                } catch (e: Exception) {
-                                    withContext(Dispatchers.Main) {
-                                        Toast.makeText(context, "Ошибка при выходе: ${e.message}", Toast.LENGTH_LONG).show()
+                // Email (не редактируется)
+                Text("Почта: $email")
+
+                Spacer(Modifier.height(8.dp))
+
+                // Имя
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (editingName) {
+                        OutlinedTextField(
+                            value = newName,
+                            onValueChange = { newName = it },
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = {
+                            viewModel.updateUserName(newName)
+                            scope.launch {
+                                withContext(Dispatchers.IO) {
+                                    userDao.getUserByEmail(userEmail)?.let {
+                                        userDao.update(it.copy(name = newName))
                                     }
                                 }
                             }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Выйти из аккаунта")
+                            editingName = false
+                        }) {
+                            Icon(Icons.Default.Check, contentDescription = "Сохранить")
+                        }
+                    } else {
+                        Text("Имя: $name", Modifier.weight(1f))
+                        IconButton(onClick = {
+                            newName = name
+                            editingName = true
+                        }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Редактировать")
+                        }
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                Spacer(Modifier.height(12.dp))
 
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                try {
-                                    withContext(Dispatchers.IO) {
-                                        val user = userDao.getUserByEmail(currentUserEmail)
-                                        if (user != null) {
-                                            userDao.delete(user)
-                                        }
-                                        val ds = DataStoreManager(context)
-                                        ds.clearAll()
-                                    }
+                // Пароль
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (editingPassword) {
+                        OutlinedTextField(
+                            value = newPassword,
+                            onValueChange = { newPassword = it },
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = {
+                            scope.launch {
+                                // обновляем пароль в DataStore
+                                viewModel.updateUserPassword(newPassword)
 
-                                    withContext(Dispatchers.Main) {
-                                        Toast.makeText(context, "Аккаунт удален", Toast.LENGTH_LONG).show()
-                                        navController.navigate("register") {
-                                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                                        }
-                                    }
-                                } catch (e: Exception) {
-                                    withContext(Dispatchers.Main) {
-                                        Toast.makeText(context, "Ошибка при удалении: ${e.message}", Toast.LENGTH_LONG).show()
+                                // сохраняем новый пароль в Room
+                                withContext(Dispatchers.IO) {
+                                    userDao.getUserByEmail(userEmail)?.let {
+                                        userDao.update(it.copy(password = newPassword))
                                     }
                                 }
+                                password = newPassword
+                                editingPassword = false
                             }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Удалить аккаунт")
+                        }) {
+                            Icon(Icons.Default.Check, contentDescription = "Сохранить")
+                        }
+                    } else {
+                        Text("Пароль: ${"*".repeat(password.length)}", Modifier.weight(1f))
+                        IconButton(onClick = {
+                            newPassword = password
+                            editingPassword = true
+                        }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Редактировать")
+                        }
                     }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Уведомления
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Уведомления", modifier = Modifier.weight(1f))
+                    Switch(
+                        checked = notificationsEnabled,
+                        onCheckedChange = { notificationsEnabled = it }
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+                Divider()
+                Spacer(Modifier.height(16.dp))
+
+                // Выйти
+                Button(
+                    onClick = {
+                        scope.launch {
+                            viewModel.clearAll()
+                            Toast.makeText(context, "Вы вышли из аккаунта", Toast.LENGTH_SHORT).show()
+                            onDismiss()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Выйти из аккаунта")
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // Удалить аккаунт
+                Button(
+                    onClick = {
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                userDao.getUserByEmail(userEmail)?.let {
+                                    userDao.delete(it)
+                                }
+                            }
+                            viewModel.clearAll()
+                            Toast.makeText(context, "Аккаунт удален", Toast.LENGTH_SHORT).show()
+                            onDismiss()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Удалить аккаунт")
                 }
             }
         }
     }
 }
+
+
+
+
+
+
+

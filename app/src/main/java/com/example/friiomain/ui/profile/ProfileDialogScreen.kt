@@ -18,15 +18,11 @@ fun ProfileDialogScreen(onDismiss: () -> Unit) {
     val email by viewModel.userEmail.collectAsState()
     val preferences by viewModel.userPreferences.collectAsState()
 
-    // -> ВАЖНО: здесь мы передаём заглушки для avatarBase64 и onAvatarChange,
-    // чтобы код компилировался. Реальную логику сохранения/обновления делай в HomeScreen
+
     ProfileDialog(
-        name = name,
-        usernameFlow = viewModel.userUsername,
-        email = email,
-        preferences = preferences,
-        avatarBase64 = null,    // заглушка — HomeScreen должен передать реальное значение
-        onAvatarChange = {},    // заглушка — HomeScreen должен обработать сохранение
+        viewModel = viewModel,
+        avatarBase64 = null,
+        onAvatarChange = {},
         onDismiss = onDismiss
     )
 }

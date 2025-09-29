@@ -13,8 +13,6 @@ import androidx.compose.ui.unit.sp
 
 
 @Composable
-
-
 fun HomeTopBar(
     user: String,
     onProfileClick: () -> Unit,
@@ -57,3 +55,4 @@ fun HomeTopBar(
         }
     }
 }
+

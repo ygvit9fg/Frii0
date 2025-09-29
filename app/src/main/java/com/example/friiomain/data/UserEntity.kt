@@ -1,9 +1,7 @@
 package com.example.friiomain.data
 
-import android.text.LoginFilter
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import kotlin.io.encoding.Base64
 
 @Entity(tableName = "users")
 data class UserEntity(

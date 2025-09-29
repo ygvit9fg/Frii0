@@ -32,6 +32,8 @@ fun WeatherPreferencesScreen(
     isEditMode: Boolean = false
 )  {
     val context = LocalContext.current
+    val dataStoreManager = remember { DataStoreManager(context) }
+
     val db = AppDatabase.getDatabase(context)
     val userDao = db.userDao()
     val sessionManager = remember { SessionManager(context) }
@@ -78,7 +80,9 @@ fun WeatherPreferencesScreen(
     )
 
     Box(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -90,12 +94,16 @@ fun WeatherPreferencesScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             LazyColumn(
-                modifier = Modifier.weight(1f).fillMaxWidth()
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
             ) {
                 items(preferencesList) { pref ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
                     ) {
                         Checkbox(
                             checked = pref in selectedPreferences,
@@ -116,7 +124,10 @@ fun WeatherPreferencesScreen(
                         return@Button
                     }
 
+
+
                     coroutineScope.launch {
+                        dataStoreManager.saveUserPreferences(selectedPreferences)
                         try {
                             // DB — в IO
                             withContext(Dispatchers.IO) {

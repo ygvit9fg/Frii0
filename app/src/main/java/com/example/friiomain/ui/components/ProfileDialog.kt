@@ -33,6 +33,10 @@ import androidx.compose.material3.Text
 import com.example.friiomain.utils.bitmapToBase64
 import com.example.friiomain.utils.base64ToBitmap
 
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.friiomain.ui.profile.ProfileViewModel
+import androidx.compose.runtime.getValue
+
 
 
 
@@ -40,24 +44,18 @@ import com.example.friiomain.utils.base64ToBitmap
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProfileDialog(
-    name: String,
-    usernameFlow: StateFlow<String>,
-    email: String,
-    preferences: List<String>,
-    friendsCount: Int = 12,
-    walksCount: Int = 34,
-    climateMatches: Int = 8,
-    monthlyKm: Double = 50.0,
-    monthlyCO2: Double = 7.2,
-    onDismiss: () -> Unit,
-    onEditPreferences: () -> Unit = {},
+    viewModel: ProfileViewModel,
     avatarBase64: String?,
-    onAvatarChange: (String?) -> Unit
+    onAvatarChange: (String?) -> Unit,
+    onDismiss: () -> Unit,
+    onEditPreferences: () -> Unit = {}
 ) {
+    val name by viewModel.userName.collectAsState()
+    val email by viewModel.userEmail.collectAsState()
+    val username by viewModel.userUsername.collectAsState()
+    val preferences by viewModel.userPreferences.collectAsState()
 
     var showAllPrefsDialog by remember { mutableStateOf(false) }
-
-
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -100,81 +98,78 @@ fun ProfileDialog(
                     onAvatarChange = onAvatarChange
                 )
 
-
-
                 Spacer(Modifier.height(8.dp))
 
-
-                val username by usernameFlow.collectAsState()
+                // Username
                 val displayUsername = if (username.isNotBlank()) "@$username" else ""
                 Text(displayUsername, fontSize = 14.sp, color = Color.Gray)
 
-
+                // Имя и почта
                 Text(name, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Text(email, fontSize = 14.sp, color = Color.Gray)
 
                 Spacer(Modifier.height(24.dp))
 
-                    // Preferences
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Settings, contentDescription = "Prefs", tint = Color.Black, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("Your Preferences", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                    }
+                // Preferences
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Settings, contentDescription = "Prefs", tint = Color.Black, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Your Preferences", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                }
 
-                    Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(8.dp))
 
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        val shown = preferences.take(3)
-                        shown.forEach { PreferenceChip(it) }
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    val shown = preferences.take(3)
+                    shown.forEach { PreferenceChip(it) }
 
-                        if (preferences.size > 3) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(Color.LightGray.copy(alpha = 0.4f))
-                                    .clickable { showAllPrefsDialog = true }
-                                    .size(28.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.KeyboardArrowDown,
-                                    contentDescription = "Show all preferences",
-                                    tint = Color.Black,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                    if (preferences.size > 3) {
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(Color.LightGray.copy(alpha = 0.4f))
+                                .clickable { showAllPrefsDialog = true }
+                                .size(28.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.KeyboardArrowDown,
+                                contentDescription = "Show all preferences",
+                                tint = Color.Black,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
+                }
 
-                    if (showAllPrefsDialog) {
-                        AlertDialog(
-                            onDismissRequest = { showAllPrefsDialog = false },
-                            confirmButton = {
-                                TextButton(onClick = { showAllPrefsDialog = false }) {
-                                    Text("Close")
-                                }
-                            },
-                            title = { Text("All Preferences", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
-                            text = {
-                                FlowRow(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    preferences.forEach { PreferenceChip(it) }
-                                }
-                            },
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                    }
+                if (showAllPrefsDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showAllPrefsDialog = false },
+                        confirmButton = {
+                            TextButton(onClick = { showAllPrefsDialog = false }) {
+                                Text("Close")
+                            }
+                        },
+                        title = { Text("All Preferences", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+                        text = {
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                preferences.forEach { PreferenceChip(it) }
+                            }
+                        },
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                }
 
-                    Spacer(Modifier.height(24.dp))
-
+                    val monthlyKm = 50.0
+                    val monthlyCO2 = 7.2
                     // Экология
                     val treesSaved = (monthlyKm / 75.0 + monthlyCO2 / 15.0) / 2
                     Column(
@@ -231,19 +226,19 @@ fun ProfileDialog(
 
                     Spacer(Modifier.height(24.dp))
 
-                    Button(
-                        onClick = onEditPreferences,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.Default.Settings, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Edit Preferences")
-                    }
+                Button(
+                    onClick = onEditPreferences,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Edit Preferences")
                 }
             }
         }
     }
+}
 
 
 @Composable
