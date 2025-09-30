@@ -36,6 +36,7 @@ import com.example.friiomain.utils.base64ToBitmap
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.friiomain.ui.profile.ProfileViewModel
 import androidx.compose.runtime.getValue
+import androidx.navigation.NavController
 
 
 
@@ -44,6 +45,7 @@ import androidx.compose.runtime.getValue
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProfileDialog(
+    navController: NavController,
     viewModel: ProfileViewModel,
     avatarBase64: String?,
     onAvatarChange: (String?) -> Unit,
@@ -54,6 +56,8 @@ fun ProfileDialog(
     val email by viewModel.userEmail.collectAsState()
     val username by viewModel.userUsername.collectAsState()
     val preferences by viewModel.userPreferences.collectAsState()
+    val avatarBase64 by viewModel.userAvatar.collectAsState()
+
 
     var showAllPrefsDialog by remember { mutableStateOf(false) }
 
@@ -95,8 +99,15 @@ fun ProfileDialog(
                 AvatarSection(
                     name = name,
                     avatarBase64 = avatarBase64,
-                    onAvatarChange = onAvatarChange
+                    onAvatarChange = { newAvatar ->
+                        if (newAvatar != null) {
+                            viewModel.updateUserAvatar(newAvatar)
+                        } else {
+                            viewModel.updateUserAvatar("") // очистить
+                        }
+                    }
                 )
+
 
                 Spacer(Modifier.height(8.dp))
 
@@ -226,12 +237,11 @@ fun ProfileDialog(
 
                     Spacer(Modifier.height(24.dp))
 
-                Button(
-                    onClick = {
-                        onDismiss()
-                        navController.navigate("editPreferences")
-                    }
-                ) {
+                Button(onClick = {
+                    val email = viewModel.userEmail.value ?: ""
+                    val currentPreferences = viewModel.userPreferences.value.joinToString(",")
+                    navController.navigate("preferences_edit/$email/$currentPreferences")
+                }) {
                     Text("Edit Preferences")
                 }
             }

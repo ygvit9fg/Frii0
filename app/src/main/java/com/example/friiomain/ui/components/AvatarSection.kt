@@ -35,15 +35,16 @@ import androidx.compose.ui.graphics.asImageBitmap
 
 
 @Composable
-
 fun AvatarSection(
     name: String,
     avatarBase64: String?,                // сохранённая аватарка из базы
     onAvatarChange: (String?) -> Unit     // callback для сохранения
 ) {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var avatarBitmap by remember { mutableStateOf(base64ToBitmap(avatarBase64 ?: "")) }
     val context = LocalContext.current
+
+    // Декодируем Base64 → Bitmap (если есть)
+    val avatarBitmap = remember(avatarBase64) { base64ToBitmap(avatarBase64 ?: "") }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -51,8 +52,7 @@ fun AvatarSection(
         imageUri = uri
         if (uri != null) {
             val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-            avatarBitmap = bitmap
-            onAvatarChange(bitmapToBase64(bitmap)) // сохраняем в базу
+            onAvatarChange(bitmapToBase64(bitmap)) // сохраняем в DataStore
         }
     }
 
@@ -71,7 +71,7 @@ fun AvatarSection(
         ) {
             if (avatarBitmap != null) {
                 Image(
-                    bitmap = avatarBitmap!!.asImageBitmap(),
+                    bitmap = avatarBitmap.asImageBitmap(),
                     contentDescription = "Avatar",
                     modifier = Modifier.fillMaxSize().clip(CircleShape),
                     contentScale = ContentScale.Crop
@@ -97,9 +97,7 @@ fun AvatarSection(
             }
             Button(
                 onClick = {
-                    avatarBitmap = null
-                    imageUri = null
-                    onAvatarChange(null) // очищаем в базе
+                    onAvatarChange(null) // очищаем в DataStore
                 },
                 shape = RoundedCornerShape(11.dp),
                 enabled = avatarBitmap != null
@@ -109,6 +107,7 @@ fun AvatarSection(
         }
     }
 }
+
 
 
 

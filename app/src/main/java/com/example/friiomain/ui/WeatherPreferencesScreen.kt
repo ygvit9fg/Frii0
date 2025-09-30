@@ -131,31 +131,30 @@ fun WeatherPreferencesScreen(
                     coroutineScope.launch {
                         dataStoreManager.saveUserPreferences(selectedPreferences)
                         try {
-                            // DB — в IO
-                            withContext(Dispatchers.IO) {
-                                val updatedUser = currentUser?.copy(
+                            val updatedUser = withContext(Dispatchers.IO) {
+                                val user = currentUser?.copy(
                                     preferences = selectedPreferences.joinToString(", ")
                                 ) ?: UserEntity(
                                     email = email,
                                     name = name,
                                     password = password,
-                                    username = name,
+                                    username = username,
                                     preferences = selectedPreferences.joinToString(", ")
                                 )
 
                                 if (currentUser == null) {
-                                    userDao.insert(updatedUser)
+                                    userDao.insert(user)
                                 } else {
-                                    userDao.update(updatedUser)
+                                    userDao.update(user)
                                 }
 
+                                sessionManager.saveUser(email, user.name)
 
-                                sessionManager.saveUser(email, name)
+                                user // ← возвращаем
                             }
 
-                            // Навигация и UI в Main
                             withContext(Dispatchers.Main) {
-                                navController.navigate("home/$email/$name") {
+                                navController.navigate("home/$email/${updatedUser.name}") {
                                     popUpTo("home/{email}/{name}") { inclusive = true }
                                 }
                             }
@@ -166,6 +165,7 @@ fun WeatherPreferencesScreen(
                             }
                         }
                     }
+
                 },
                 modifier = Modifier
                     .fillMaxWidth()

@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
                 composable("login") {
                     LoginScreen(navController) { email, name ->
                         sessionManager.saveUser(email, name)
-                        navController.navigate("home/$email/$name") {
+                        navController.navigate("home/$email") {
                             popUpTo("login") { inclusive = true }
                         }
                     }
@@ -98,6 +98,7 @@ class MainActivity : ComponentActivity() {
                         isEditMode = true
                     )
                 }
+
 
                 // Home
                 composable("home/{email}/{name}") { backStackEntry ->

@@ -31,6 +31,9 @@ class ProfileViewModel @Inject constructor(
     val userPreferences: StateFlow<List<String>> = dataStore.userPreferences
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    val userAvatar: StateFlow<String?> = dataStore.userAvatar
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
     fun updateUserName(newName: String) {
         viewModelScope.launch {
             dataStore.saveUserName(newName)
@@ -43,18 +46,27 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun clearAll() {
-        viewModelScope.launch {
-            dataStore.clearAll()
-        }
-    }
-
     fun updateUserPreferences(prefs: List<String>) {
         viewModelScope.launch {
             dataStore.saveUserPreferences(prefs)
         }
     }
+
+    fun updateUserAvatar(avatarBase64: String) {
+        viewModelScope.launch {
+            dataStore.saveUserAvatar(avatarBase64)
+        }
+    }
+
+    fun clearAll() {
+        viewModelScope.launch {
+            dataStore.clearAll()
+        }
+    }
 }
+
+
+
 
 
 

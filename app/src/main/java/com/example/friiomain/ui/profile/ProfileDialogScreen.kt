@@ -5,12 +5,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.friiomain.ui.components.ProfileDialog
 import androidx.compose.runtime.getValue
+import androidx.navigation.NavController
+
+
 
 
 
 
 @Composable
-fun ProfileDialogScreen(onDismiss: () -> Unit) {
+fun ProfileDialogScreen(
+    navController: NavController,
+    onDismiss: () -> Unit
+) {
     val viewModel: ProfileViewModel = hiltViewModel()
 
     val name by viewModel.userName.collectAsState()
@@ -18,12 +24,12 @@ fun ProfileDialogScreen(onDismiss: () -> Unit) {
     val email by viewModel.userEmail.collectAsState()
     val preferences by viewModel.userPreferences.collectAsState()
 
-
     ProfileDialog(
         viewModel = viewModel,
         avatarBase64 = null,
         onAvatarChange = {},
-        onDismiss = onDismiss
+        onDismiss = onDismiss,
+        navController = navController
     )
 }
 

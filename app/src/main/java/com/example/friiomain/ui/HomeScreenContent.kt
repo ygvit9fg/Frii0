@@ -94,6 +94,7 @@ fun HomeScreenContent(
     // ДИАЛОГИ (Profile / Notifications / Settings)
     if (showProfileDialog) {
         ProfileDialog(
+            navController = navController,
             viewModel = viewModel,
             avatarBase64 = null, // HomeScreen передавал null — оставляем так
             onAvatarChange = {},
@@ -161,7 +162,7 @@ fun HomeScreenContent(
                             Text("Город (заглушка)", fontWeight = FontWeight.Bold)
                         }
                         Text(
-                            text = weather?.weather?.get(0)?.description ?: "Нет данных",
+                            text = weather?.weather?.firstOrNull()?.description ?: "Нет данных",
                             fontSize = 14.sp,
                             color = Color.Gray
                         )
