@@ -36,7 +36,6 @@ import com.example.friiomain.utils.base64ToBitmap
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.friiomain.ui.profile.ProfileViewModel
 import androidx.compose.runtime.getValue
-import androidx.navigation.NavController
 
 
 
@@ -45,7 +44,6 @@ import androidx.navigation.NavController
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProfileDialog(
-    navController: NavController,
     viewModel: ProfileViewModel,
     avatarBase64: String?,
     onAvatarChange: (String?) -> Unit,
@@ -56,8 +54,6 @@ fun ProfileDialog(
     val email by viewModel.userEmail.collectAsState()
     val username by viewModel.userUsername.collectAsState()
     val preferences by viewModel.userPreferences.collectAsState()
-    val avatarBase64 by viewModel.userAvatar.collectAsState()
-
 
     var showAllPrefsDialog by remember { mutableStateOf(false) }
 
@@ -99,15 +95,8 @@ fun ProfileDialog(
                 AvatarSection(
                     name = name,
                     avatarBase64 = avatarBase64,
-                    onAvatarChange = { newAvatar ->
-                        if (newAvatar != null) {
-                            viewModel.updateUserAvatar(newAvatar)
-                        } else {
-                            viewModel.updateUserAvatar("") // очистить
-                        }
-                    }
+                    onAvatarChange = onAvatarChange
                 )
-
 
                 Spacer(Modifier.height(8.dp))
 
@@ -237,11 +226,13 @@ fun ProfileDialog(
 
                     Spacer(Modifier.height(24.dp))
 
-                Button(onClick = {
-                    val email = viewModel.userEmail.value ?: ""
-                    val currentPreferences = viewModel.userPreferences.value.joinToString(",")
-                    navController.navigate("preferences_edit/$email/$currentPreferences")
-                }) {
+                Button(
+                    onClick = onEditPreferences,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
                     Text("Edit Preferences")
                 }
             }
