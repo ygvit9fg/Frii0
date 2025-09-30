@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
+import kotlinx.coroutines.launch
+
+
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
@@ -30,6 +33,44 @@ class ProfileViewModel @Inject constructor(
     val userUsername: StateFlow<String> = dataStoreManager.userUsername
         .map { it ?: "" }
         .stateIn(viewModelScope, SharingStarted.Lazily, "")
+
+    val userAvatar: StateFlow<String?> = dataStoreManager.userAvatar
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    // --- Методы обновления ---
+    fun updateUserName(newName: String) {
+        viewModelScope.launch {
+            dataStoreManager.saveUserName(newName)
+        }
+    }
+
+    fun updateUserPreferences(prefs: List<String>) {
+        viewModelScope.launch {
+            dataStoreManager.saveUserPreferences(prefs)
+        }
+    }
+
+    fun updateUserAvatar(avatarBase64: String?) {
+        viewModelScope.launch {
+            if (avatarBase64 != null) {
+                dataStoreManager.saveUserAvatar(avatarBase64)
+            } else {
+                dataStoreManager.saveUserAvatar("") // очистка
+            }
+        }
+    }
+
+    fun updateUserPassword(newPassword: String) {
+        viewModelScope.launch {
+            dataStoreManager.saveUserPassword(newPassword)
+        }
+    }
+
+    fun clearAll() {
+        viewModelScope.launch {
+            dataStoreManager.clearAll()
+        }
+    }
 }
 
 class ProfileViewModelFactory(

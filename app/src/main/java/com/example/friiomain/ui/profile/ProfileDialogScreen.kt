@@ -5,31 +5,33 @@ import androidx.compose.runtime.collectAsState
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.friiomain.ui.components.ProfileDialog
 import androidx.compose.runtime.getValue
+import androidx.navigation.NavController
+
 
 
 
 
 @Composable
-fun ProfileDialogScreen(onDismiss: () -> Unit) {
+fun ProfileDialogScreen(
+    navController: NavController,
+    onDismiss: () -> Unit
+) {
     val viewModel: ProfileViewModel = hiltViewModel()
 
-    val name by viewModel.userName.collectAsState()
-    val username by viewModel.userUsername.collectAsState()
-    val email by viewModel.userEmail.collectAsState()
-    val preferences by viewModel.userPreferences.collectAsState()
-
-    // -> ВАЖНО: здесь мы передаём заглушки для avatarBase64 и onAvatarChange,
-    // чтобы код компилировался. Реальную логику сохранения/обновления делай в HomeScreen
     ProfileDialog(
-        name = name,
-        usernameFlow = viewModel.userUsername,
-        email = email,
-        preferences = preferences,
-        avatarBase64 = null,    // заглушка — HomeScreen должен передать реальное значение
-        onAvatarChange = {},    // заглушка — HomeScreen должен обработать сохранение
-        onDismiss = onDismiss
+        viewModel = viewModel,
+        avatarBase64 = null,
+        onAvatarChange = {},
+        onDismiss = onDismiss,
+        onEditPreferences = {
+            // навигация на экран настроек
+            val email = viewModel.userEmail.value
+            val prefs = viewModel.userPreferences.value.joinToString(",")
+            navController.navigate("preferences_edit/$email/$prefs")
+        }
     )
 }
+
 
 
 

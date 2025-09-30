@@ -40,14 +40,16 @@ import kotlinx.coroutines.withContext
 import com.example.friiomain.ui.profile.ProfileViewModel
 import com.example.friiomain.ui.components.SettingsDialog
 import com.example.friiomain.data.DataStoreManager
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun HomeScreenContent(
     navController: NavController,
     email: String,
     name: String,
-    viewModel: ProfileViewModel
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
+
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -57,6 +59,10 @@ fun HomeScreenContent(
     var showSettingsDialog by remember { mutableStateOf(false) }
     var weather by remember { mutableStateOf<WeatherResponse?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    val avatarBase64 by viewModel.userAvatar.collectAsState()
+    val preferences by viewModel.userPreferences.collectAsState()
+    val email by viewModel.userEmail.collectAsState()
+
 
     // Проверка разрешений и загрузка погоды
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -87,6 +93,7 @@ fun HomeScreenContent(
                     isLoading = false
                 }
             }
+
             else -> locationPermissionLauncher.launch(permission)
         }
     }
@@ -94,249 +101,259 @@ fun HomeScreenContent(
     // ДИАЛОГИ (Profile / Notifications / Settings)
     if (showProfileDialog) {
         ProfileDialog(
-            navController = navController,
             viewModel = viewModel,
-            avatarBase64 = null, // HomeScreen передавал null — оставляем так
-            onAvatarChange = {},
-            onDismiss = { showProfileDialog = false },
-            onEditPreferences = { /* если нужно: навигация из HomeScreen в Preferences */ }
+            avatarBase64 = avatarBase64,
+            onAvatarChange = { newAvatar ->
+                viewModel.updateUserAvatar(newAvatar)
+            },
+            onDismiss = {
+                showProfileDialog = false
+            },
+            onEditPreferences = {
+                val prefs = preferences.joinToString(",")
+                navController.navigate("preferences_edit/$email/$prefs")
+            }
         )
-    }
+
+
+
 
     if (showNotificationsDialog) {
-        AlertDialog(
-            onDismissRequest = { showNotificationsDialog = false },
-            confirmButton = {},
-            title = { Text("Уведомления") },
-            text = { Text("Пока пусто 🚀") }
-        )
+            AlertDialog(
+                onDismissRequest = { showNotificationsDialog = false },
+                confirmButton = {},
+                title = { Text("Уведомления") },
+                text = { Text("Пока пусто 🚀") }
+            )
+        }
+
+        if (showProfileDialog) {
+            ProfileDialog(
+                viewModel = viewModel,
+                avatarBase64 = viewModel.userAvatar.collectAsState().value,
+                onAvatarChange = { newAvatar -> viewModel.updateUserAvatar(newAvatar) },
+                onDismiss = { showProfileDialog = false }
+            )
+        }
     }
 
-    if (showSettingsDialog) {
-        SettingsDialog(
-            onDismiss = { showSettingsDialog = false },
-            viewModel = viewModel,
-            userDao = AppDatabase.getDatabase(context).userDao(),
-            userEmail = email
-        )
-    }
-
-    // ОСНОВНОЙ UI
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        HomeTopBar(
-            user = name, // name уже берётся из DataStore через viewModel
-            onProfileClick = { showProfileDialog = true },
-            onNotificationsClick = { showNotificationsDialog = true },
-            onSettingsClick = { showSettingsDialog = true }
-        )
-
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Погода
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+        // ОСНОВНОЙ UI
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.Start
+            HomeTopBar(
+                user = name, // name уже берётся из DataStore через viewModel
+                onProfileClick = { showProfileDialog = true },
+                onNotificationsClick = { showNotificationsDialog = true },
+                onSettingsClick = { showSettingsDialog = true }
+            )
+
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Погода
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Thermostat, contentDescription = "Температура")
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Place,
-                                contentDescription = "Локация",
-                                tint = Color.Gray
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Город (заглушка)", fontWeight = FontWeight.Bold)
-                        }
-                        Text(
-                            text = weather?.weather?.firstOrNull()?.description ?: "Нет данных",
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "${weather?.main?.temp ?: "--"}°C",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-
-        // Weather Matches
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Weather Matches", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(
-                    "Friends who also love this weather!",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                repeat(2) { index ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.Gray),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "AB",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Имя Друга ${index + 1}")
-                            }
-                            Button(onClick = { /* TODO: Invite */ }) {
-                                Text("Invite")
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Friends
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.Start
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Person, contentDescription = "Friends")
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Friends (2)", fontWeight = FontWeight.Bold)
+                        Icon(Icons.Default.Thermostat, contentDescription = "Температура")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.Place,
+                                    contentDescription = "Локация",
+                                    tint = Color.Gray
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Город (заглушка)", fontWeight = FontWeight.Bold)
+                            }
+                            Text(
+                                text = weather?.weather?.firstOrNull()?.description ?: "Нет данных",
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        }
                     }
-                    Button(
-                        onClick = { navController.navigate("addFriend/$email") },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-                    ) {
-                        Text("+", color = Color.White)
-                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "${weather?.main?.temp ?: "--"}°C",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    repeat(2) {
+            }
+
+            // Weather Matches
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Weather Matches", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(
+                        "Friends who also love this weather!",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    repeat(2) { index ->
                         Card(
-                            modifier = Modifier.size(80.dp),
-                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("AB", fontWeight = FontWeight.Bold)
-                                Text("Ник", fontSize = 12.sp, color = Color.Gray)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.Gray),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "AB",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Имя Друга ${index + 1}")
+                                }
+                                Button(onClick = { /* TODO: Invite */ }) {
+                                    Text("Invite")
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        // Climate Impact
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("🌱", fontSize = 20.sp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Your Climate Impact", fontWeight = FontWeight.Bold)
+            // Friends
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Person, contentDescription = "Friends")
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Friends (2)", fontWeight = FontWeight.Bold)
+                        }
+                        Button(
+                            onClick = { navController.navigate("addFriend/$email") },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+                        ) {
+                            Text("+", color = Color.White)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        repeat(2) {
+                            Card(
+                                modifier = Modifier.size(80.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text("AB", fontWeight = FontWeight.Bold)
+                                    Text("Ник", fontSize = 12.sp, color = Color.Gray)
+                                }
+                            }
+                        }
+                    }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+            }
+
+            // Climate Impact
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("🌱", fontSize = 20.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Your Climate Impact", fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text("12 km", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                            Text("km walked this week", fontSize = 12.sp, color = Color.Gray)
+                        }
+                        Column {
+                            Text("3.5 kg", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                            Text("kg CO2 saved", fontSize = 12.sp, color = Color.Gray)
+                        }
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(
+                    onClick = { navController.navigate("qrScanner/$email") },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f).padding(end = 4.dp)
                 ) {
-                    Column {
-                        Text("12 km", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                        Text("km walked this week", fontSize = 12.sp, color = Color.Gray)
-                    }
-                    Column {
-                        Text("3.5 kg", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                        Text("kg CO2 saved", fontSize = 12.sp, color = Color.Gray)
-                    }
+                    Icon(Icons.Default.QrCodeScanner, contentDescription = "QR")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("QR Code")
                 }
-            }
-        }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(
-                onClick = { navController.navigate("qrScanner/$email") },
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.weight(1f).padding(end = 4.dp)
-            ) {
-                Icon(Icons.Default.QrCodeScanner, contentDescription = "QR")
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("QR Code")
-            }
-
-            Button(
-                onClick = { /* TODO: Find Walks */ },
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.weight(1f).padding(start = 4.dp)
-            ) {
-                Icon(Icons.Default.Place, contentDescription = "Find Walks")
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Find Walks")
+                Button(
+                    onClick = { /* TODO: Find Walks */ },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f).padding(start = 4.dp)
+                ) {
+                    Icon(Icons.Default.Place, contentDescription = "Find Walks")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Find Walks")
+                }
             }
         }
     }
-}
+
 

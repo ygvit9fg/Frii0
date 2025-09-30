@@ -36,6 +36,8 @@ import com.example.friiomain.utils.base64ToBitmap
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.friiomain.ui.profile.ProfileViewModel
 import androidx.compose.runtime.getValue
+import androidx.navigation.NavController
+
 
 
 
@@ -226,13 +228,7 @@ fun ProfileDialog(
 
                     Spacer(Modifier.height(24.dp))
 
-                Button(
-                    onClick = onEditPreferences,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(Icons.Default.Settings, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
+                Button(onClick = onEditPreferences) {
                     Text("Edit Preferences")
                 }
             }

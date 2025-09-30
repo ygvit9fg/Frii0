@@ -19,13 +19,10 @@ import com.example.friiomain.ui.profile.ProfileViewModel
 fun ProfileScreen(navController: NavController, currentUserEmail: String) {
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Добавить друга") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                }
+            AppTopBar(
+                navController = navController,
+                showBackButton = true,
+                defaultTitle = "Добавить друга"
             )
         }
     ) { padding ->
