@@ -9,23 +9,27 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.friiomain.data.AppDatabase
-import com.example.friiomain.utils.SessionManager
-import kotlinx.coroutines.launch
-import androidx.compose.ui.Alignment
 import com.example.friiomain.data.DataStoreManager
 import kotlinx.coroutines.flow.first
-
+import kotlinx.coroutines.launch
+import androidx.compose.ui.Alignment
+import com.example.friiomain.ui.profile.ProfileViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
-fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -> Unit) {
+fun LoginScreen(
+    navController: NavController,
+    viewModel: ProfileViewModel = hiltViewModel(),
+    onLoginSuccess: (email: String, name: String) -> Unit
+
+) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val userDao = db.userDao()
     val coroutineScope = rememberCoroutineScope()
-    val sessionManager = remember { SessionManager(context) }
 
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var emailInput by remember { mutableStateOf("") }
+    var passwordInput by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -41,8 +45,8 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -
             Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
+                value = emailInput,
+                onValueChange = { emailInput = it },
                 label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -50,43 +54,23 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
+                value = passwordInput,
+                onValueChange = { passwordInput = it },
                 label = { Text("Пароль") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
-                onClick = {
-                    coroutineScope.launch {
-                        val user = userDao.getUserByEmail(email) // ищем только по email
-                        val dataStoreManager = DataStoreManager(context)
-                        val savedPassword = dataStoreManager.userPassword.first() ?: ""
-
-                        if (user != null && password == savedPassword) {
-                            coroutineScope.launch {
-                                dataStoreManager.saveUserEmail(user.email)
-                                dataStoreManager.saveUserName(user.name)
-                                dataStoreManager.saveUserUsername(user.username ?: user.email.substringBefore("@"))
-                                dataStoreManager.saveUserPassword(savedPassword)  // гарантируем синхронизацию
-                            }
-
-                            onLoginSuccess(user.email, user.name)
-                            navController.navigate("home/${user.email}/${user.name}") {
-                                popUpTo("login") { inclusive = true }
-                            }
-                        } else {
-                            Toast.makeText(context, "Неверные данные", Toast.LENGTH_LONG).show()
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Войти")
+            Button(onClick = {
+                val email = "user@example.com" // получаем из полей
+                val name = "Dima"              // получаем из полей
+                navController.navigate("home/$email/$name") {
+                    popUpTo("login") { inclusive = true }
+                }
+            }) {
+                Text("Продолжить")
             }
-
 
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -115,6 +99,7 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String, String) -
         }
     }
 }
+
 
 
 

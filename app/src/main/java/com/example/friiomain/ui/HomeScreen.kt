@@ -85,27 +85,36 @@ fun HomeScreen(
 
 
 
-        suspend fun loadWeather(context: Context): WeatherResponse? {
-            return try {
-                val hasPermission = ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
+suspend fun loadWeather(context: Context): WeatherResponse? {
+    return try {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
 
-                if (!hasPermission) return null
+        if (!hasPermission) return null
 
-                val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-                val location: Location? = fusedLocationClient.lastLocation.await()
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+        val location: Location? = fusedLocationClient.lastLocation.await()
 
-                if (location != null) {
-                    val repo = WeatherRepository("4731afa59235bbee6a194fc02cff4f8b")
-                    repo.getWeather(location.latitude, location.longitude)
-                } else null
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
-            }
-        }
+        if (location != null) {
+            val repo = WeatherRepository("4731afa59235bbee6a194fc02cff4f8b")
+            repo.getWeather(location.latitude, location.longitude)
+        } else null
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
+
+
+
+
+
+
+
+
 
 
 

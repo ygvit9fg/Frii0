@@ -50,13 +50,15 @@ fun SettingsDialog(
 
     // Загружаем пароль из БД при открытии
     LaunchedEffect(userEmail) {
-        withContext(Dispatchers.IO) {
-            val currentUser = userDao.getUserByEmail(userEmail)
-            if (currentUser != null) {
-                password = currentUser.password
+        if (userEmail.isNotBlank()) {
+            withContext(Dispatchers.IO) {
+                userDao.getUserByEmail(userEmail)?.let {
+                    password = it.password
+                }
             }
         }
     }
+
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(

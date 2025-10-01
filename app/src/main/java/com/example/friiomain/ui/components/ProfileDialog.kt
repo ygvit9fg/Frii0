@@ -170,63 +170,63 @@ fun ProfileDialog(
                     )
                 }
 
-                    val monthlyKm = 50.0
-                    val monthlyCO2 = 7.2
-                    // Экология
-                    val treesSaved = (monthlyKm / 75.0 + monthlyCO2 / 15.0) / 2
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0xFFE8F5E9))
-                            .padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column {
-                                Text("$monthlyKm km", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                                Text("Walked this month", fontSize = 12.sp, color = Color.Gray)
-                            }
-                            Column {
-                                Text("$monthlyCO2 kg", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                                Text("CO2 saved", fontSize = 12.sp, color = Color.Gray)
-                            }
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "🌱 You’ve saved the equivalent of ${"%.1f".format(treesSaved)} tree saplings this month",
-                            fontSize = 11.sp,
-                            color = Color.Gray
-                        )
-                    }
-
-                    Spacer(Modifier.height(24.dp))
-
-                    // Ачивки
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("🏅", fontSize = 18.sp)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Recent Achievements", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                    }
-                    Spacer(Modifier.height(8.dp))
+                val monthlyKm = 50.0
+                val monthlyCO2 = 7.2
+                // Экология
+                val treesSaved = (monthlyKm / 75.0 + monthlyCO2 / 15.0) / 2
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFFE8F5E9))
+                        .padding(16.dp)
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        repeat(3) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(40.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Color.LightGray.copy(alpha = 0.3f))
-                            )
+                        Column {
+                            Text("$monthlyKm km", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                            Text("Walked this month", fontSize = 12.sp, color = Color.Gray)
+                        }
+                        Column {
+                            Text("$monthlyCO2 kg", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                            Text("CO2 saved", fontSize = 12.sp, color = Color.Gray)
                         }
                     }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "🌱 You’ve saved the equivalent of ${"%.1f".format(treesSaved)} tree saplings this month",
+                        fontSize = 11.sp,
+                        color = Color.Gray
+                    )
+                }
 
-                    Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(24.dp))
+
+                // Ачивки
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🏅", fontSize = 18.sp)
+                    Spacer(Modifier.width(4.dp))
+                    Text("Recent Achievements", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    repeat(3) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.LightGray.copy(alpha = 0.3f))
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
 
                 Button(onClick = onEditPreferences) {
                     Text("Edit Preferences")
@@ -257,6 +257,7 @@ private fun PreferenceChip(text: String) {
             .padding(horizontal = 8.dp, vertical = 4.dp)
     )
 }
+
 
 
 
