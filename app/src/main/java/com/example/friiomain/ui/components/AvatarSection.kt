@@ -30,6 +30,12 @@ import android.graphics.Bitmap
 import android.provider.MediaStore
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.asImageBitmap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.compose.runtime.rememberCoroutineScope
+import com.example.friiomain.data.AppDatabase
+
 
 
 
@@ -37,11 +43,15 @@ import androidx.compose.ui.graphics.asImageBitmap
 @Composable
 fun AvatarSection(
     name: String,
+    email: String,                        // 👈 нужен email, чтобы обновить юзера в БД
     avatarBase64: String?,                // сохранённая аватарка из базы
-    onAvatarChange: (String?) -> Unit     // callback для сохранения
+    onAvatarChange: (String?) -> Unit     // callback для сохранения в DataStore
 ) {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val userDao = AppDatabase.getDatabase(context).userDao()
 
     // Декодируем Base64 → Bitmap (если есть)
     val avatarBitmap = remember(avatarBase64) { base64ToBitmap(avatarBase64 ?: "") }
@@ -52,7 +62,17 @@ fun AvatarSection(
         imageUri = uri
         if (uri != null) {
             val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-            onAvatarChange(bitmapToBase64(bitmap)) // сохраняем в DataStore
+            val base64 = bitmapToBase64(bitmap)
+
+            // сохраняем в DataStore
+            onAvatarChange(base64)
+
+            // сохраняем в Room
+            scope.launch {
+                withContext(Dispatchers.IO) {
+                    userDao.updateAvatar(email, base64)
+                }
+            }
         }
     }
 
@@ -97,7 +117,15 @@ fun AvatarSection(
             }
             Button(
                 onClick = {
-                    onAvatarChange(null) // очищаем в DataStore
+                    // очищаем в DataStore
+                    onAvatarChange(null)
+
+                    // очищаем в Room
+                    scope.launch {
+                        withContext(Dispatchers.IO) {
+                            userDao.updateAvatar(email, null)
+                        }
+                    }
                 },
                 shape = RoundedCornerShape(11.dp),
                 enabled = avatarBitmap != null
@@ -107,6 +135,7 @@ fun AvatarSection(
         }
     }
 }
+
 
 
 

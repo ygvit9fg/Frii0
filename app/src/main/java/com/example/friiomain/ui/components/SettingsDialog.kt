@@ -132,6 +132,7 @@ fun SettingsDialog(
                 Spacer(Modifier.height(12.dp))
 
                 // Пароль
+                // Пароль
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -149,20 +150,17 @@ fun SettingsDialog(
                                 if (newPassword.isNotBlank()) {
                                     // обновляем в Room
                                     withContext(Dispatchers.IO) {
-                                        userDao.getUserByEmail(userEmail)?.let {
-                                            userDao.update(it.copy(password = newPassword))
-                                        }
+                                        userDao.updatePassword(userEmail, newPassword)
                                     }
 
-                                    // обновляем в DataStore
+                                    // обновляем в DataStore / ViewModel
                                     viewModel.updateUserPassword(newPassword)
 
                                     // локальное состояние
                                     password = newPassword
                                     editingPassword = false
 
-                                    Toast.makeText(context, "Пароль обновлён", Toast.LENGTH_SHORT)
-                                        .show()
+                                    Toast.makeText(context, "Пароль обновлён", Toast.LENGTH_SHORT).show()
                                 } else {
                                     Toast.makeText(
                                         context,
@@ -187,117 +185,125 @@ fun SettingsDialog(
 
                 Spacer(Modifier.height(16.dp))
 
+
                 // Уведомления
-                @Composable
-                fun NotificationRow(
-                    title: String,
-                    checked: Boolean,
-                    onCheckedChange: (Boolean) -> Unit
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Уведомления", modifier = Modifier.weight(1f))
-                        Switch(
+                        @Composable
+                        fun NotificationRow(
+                            title: String,
+                            checked: Boolean,
+                            onCheckedChange: (Boolean) -> Unit
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Уведомления", modifier = Modifier.weight(1f))
+                                Switch(
+                                    checked = notificationsEnabled,
+                                    onCheckedChange = { notificationsEnabled = it }
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Spacer(Modifier.height(16.dp))
+
+                        //тема
+                        @Composable
+                        fun SettingSwitchRow(
+                            title: String,
+                            checked: Boolean,
+                            onCheckedChange: (Boolean) -> Unit
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                            ) {
+                                Text(title, modifier = Modifier.weight(1f))
+                                Switch(
+                                    checked = checked,
+                                    onCheckedChange = onCheckedChange
+                                )
+                            }
+                        }
+
+                        SettingSwitchRow(
+                            title = "Уведомления",
                             checked = notificationsEnabled,
                             onCheckedChange = { notificationsEnabled = it }
                         )
-                    }
-                }
 
-                Spacer(Modifier.height(16.dp))
+                        Divider()
 
-                Spacer(Modifier.height(16.dp))
-
-                //тема
-                @Composable
-                fun SettingSwitchRow(
-                    title: String,
-                    checked: Boolean,
-                    onCheckedChange: (Boolean) -> Unit
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-                    ) {
-                        Text(title, modifier = Modifier.weight(1f))
-                        Switch(
-                            checked = checked,
-                            onCheckedChange = onCheckedChange
+                        SettingSwitchRow(
+                            title = "Тёмная тема",
+                            checked = interfaceEnabled,
+                            onCheckedChange = { interfaceEnabled = it }
                         )
+
+
+                        // Выйти
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    // удаляем/очищаем в БД в IO-потоке
+                                    withContext(Dispatchers.IO) {
+
+                                    }
+
+                                    // чистим DataStore / ViewModel / сессию
+                                    viewModel.clearAll()
+
+                                    Toast.makeText(
+                                        context,
+                                        "Вы вышли из аккаунта",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                        .show()
+                                    onDismiss()
+
+                                    // Навигация на экран логина, очищаем стек
+                                    navController.navigate("login") {
+                                        popUpTo("home/{email}/{name}") { inclusive = true }
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Выйти из аккаунта")
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        // Удалить аккаунт
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        userDao.getUserByEmail(userEmail)
+                                            ?.let { userDao.delete(it) }
+                                    }
+                                    viewModel.clearAll()
+                                    Toast.makeText(context, "Аккаунт удален", Toast.LENGTH_SHORT)
+                                        .show()
+                                    onDismiss()
+                                    navController.navigate("login") {
+                                        popUpTo("home/{email}/{name}") { inclusive = true }
+                                    }
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Удалить аккаунт")
+                        }
                     }
                 }
-
-                SettingSwitchRow(
-                    title = "Уведомления",
-                    checked = notificationsEnabled,
-                    onCheckedChange = { notificationsEnabled = it }
-                )
-
-                Divider()
-
-                SettingSwitchRow(
-                    title = "Тёмная тема",
-                    checked = interfaceEnabled,
-                    onCheckedChange = { interfaceEnabled = it }
-                )
-
-
-                // Выйти
-                Button(
-                    onClick = {
-                        scope.launch {
-                            // удаляем/очищаем в БД в IO-потоке
-                            withContext(Dispatchers.IO) {
-                                userDao.getUserByEmail(userEmail)?.let { userDao.delete(it) }
-                                // или userDao.deleteByEmail(userEmail) если добавил метод
-                            }
-
-                            // чистим DataStore / ViewModel / сессию
-                            viewModel.clearAll()
-
-                            Toast.makeText(context, "Вы вышли из аккаунта", Toast.LENGTH_SHORT)
-                                .show()
-                            onDismiss()
-
-                            // Навигация на экран логина, очищаем стек
-                            navController.navigate("login") {
-                                popUpTo("home/{email}/{name}") { inclusive = true }
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Выйти из аккаунта")
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                // Удалить аккаунт
-                Button(
-                    onClick = {
-                        scope.launch {
-                            withContext(Dispatchers.IO) {
-                                userDao.getUserByEmail(userEmail)?.let { userDao.delete(it) }
-                            }
-                            viewModel.clearAll()
-                            Toast.makeText(context, "Аккаунт удален", Toast.LENGTH_SHORT).show()
-                            onDismiss()
-                            navController.navigate("login") {
-                                popUpTo("home/{email}/{name}") { inclusive = true }
-                            }
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Удалить аккаунт")
-                }
-            }
             }
         }
-    }
+
+
 
 
 

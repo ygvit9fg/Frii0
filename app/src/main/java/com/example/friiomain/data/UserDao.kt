@@ -27,5 +27,19 @@ interface UserDao {
     @Delete
     suspend fun delete(user: UserEntity)
 
+    @Update
+    suspend fun updateUser(user: UserEntity)
+
+    @Query("UPDATE users SET password = :newPassword WHERE email = :email")
+    suspend fun updatePassword(email: String, newPassword: String)
+
+    @Query("UPDATE users SET username = :username WHERE email = :email")
+    suspend fun updateUsernameByEmail(email: String, username: String)
+
+    @Query("UPDATE users SET preferences = :prefs WHERE email = :email")
+    suspend fun updatePreferences(email: String, prefs: String)
+
+    @Query("UPDATE users SET avatarBase64 = :avatar WHERE email = :email")
+    suspend fun updateAvatar(email: String, avatar: String?)
 
 }

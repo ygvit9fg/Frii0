@@ -129,43 +129,29 @@ fun WeatherPreferencesScreen(
 
 
                     coroutineScope.launch {
-                        dataStoreManager.saveUserPreferences(selectedPreferences)
                         try {
-                            val updatedUser = withContext(Dispatchers.IO) {
-                                val user = currentUser?.copy(
-                                    preferences = selectedPreferences.joinToString(", ")
-                                ) ?: UserEntity(
-                                    email = email,
-                                    name = name,
-                                    password = password,
-                                    username = username,
-                                    preferences = selectedPreferences.joinToString(", ")
-                                )
+                            // сохраняем только preferences в DataStore
+                            dataStoreManager.saveUserPreferences(selectedPreferences)
 
-                                if (currentUser == null) {
-                                    userDao.insert(user)
-                                } else {
-                                    userDao.update(user)
-                                }
-
-                                sessionManager.saveUser(email, user.name)
-
-                                user // ← возвращаем
+                            // обновляем только preferences в Room
+                            withContext(Dispatchers.IO) {
+                                userDao.updatePreferences(email, selectedPreferences.joinToString(","))
                             }
 
-                            withContext(Dispatchers.Main) {
-                                navController.navigate("home/$email/${updatedUser.name}") {
-                                    popUpTo("home/{email}/{name}") { inclusive = true }
-                                }
+                            // достаём имя для перехода
+                            val updatedName = withContext(Dispatchers.IO) {
+                                userDao.getUserByEmail(email)?.name ?: ""
+                            }
+
+                            // возвращаемся в HomeScreen
+                            navController.navigate("home/$email/$updatedName") {
+                                popUpTo("home/{email}/{name}") { inclusive = true }
                             }
 
                         } catch (e: Exception) {
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Ошибка при сохранении: ${e.message}", Toast.LENGTH_LONG).show()
-                            }
+                            Toast.makeText(context, "Ошибка: ${e.message}", Toast.LENGTH_LONG).show()
                         }
                     }
-
                 },
                 modifier = Modifier
                     .fillMaxWidth()

@@ -79,9 +79,10 @@ fun RegisterScreen(navController: NavController) {
                         val newUser = UserEntity(
                             email = email,
                             name = name,
-                            username = "",
+                            username = null, // ← ставим null, чтобы потом обновить
                             password = password,
-                            preferences = ""
+                            preferences = "",
+                            avatarBase64 = null
                         )
                         userDao.insert(newUser)
 

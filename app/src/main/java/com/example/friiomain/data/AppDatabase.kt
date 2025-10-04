@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
+
 @Database(
     entities = [UserEntity::class, FriendEntity::class], // ✅ именно так
     version = 2,                    // 🔥 число напрямую, не переменная

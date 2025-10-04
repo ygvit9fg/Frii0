@@ -97,14 +97,19 @@ fun ProfileDialog(
                 AvatarSection(
                     name = name,
                     avatarBase64 = avatarBase64,
-                    onAvatarChange = onAvatarChange
+                    onAvatarChange = onAvatarChange,
+                    email = email
                 )
 
                 Spacer(Modifier.height(8.dp))
 
                 // Username
                 val displayUsername = if (username.isNotBlank()) "@$username" else ""
-                Text(displayUsername, fontSize = 14.sp, color = Color.Gray)
+                Text(
+                    text = displayUsername,
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
 
                 // Имя и почта
                 Text(name, fontSize = 20.sp, fontWeight = FontWeight.Bold)

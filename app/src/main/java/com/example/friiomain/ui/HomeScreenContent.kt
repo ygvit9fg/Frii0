@@ -64,8 +64,9 @@ fun HomeScreenContent(
     var isLoading by remember { mutableStateOf(true) }
     val avatarBase64 by viewModel.userAvatar.collectAsState()
     val preferences by viewModel.userPreferences.collectAsState()
-    val email by viewModel.userEmail.collectAsState()
-    val name by viewModel.userName.collectAsState()
+    val username by viewModel.userUsername.collectAsState()
+
+
 
 
     // Проверка разрешений и загрузка погоды
@@ -99,6 +100,26 @@ fun HomeScreenContent(
             }
 
             else -> locationPermissionLauncher.launch(permission)
+        }
+    }
+
+    LaunchedEffect(email) {
+        withContext(Dispatchers.IO) {
+            val user = AppDatabase.getDatabase(context).userDao().getUserByEmail(email)
+            user?.let {
+                viewModel.updateUserEmail(it.email)
+                viewModel.updateUserName(it.name)
+                viewModel.updateUserPassword(it.password)
+                viewModel.updateUserPreferences(
+                    it.preferences?.split(",")?.map { pref -> pref.trim() } ?: emptyList()
+                )
+                viewModel.updateUserUsername(it.username ?: "")
+
+                // 👇 не обновляем avatar из Room, если там null
+                if (!it.avatarBase64.isNullOrEmpty()) {
+                    viewModel.updateUserAvatar(it.avatarBase64)
+                }
+            }
         }
     }
 

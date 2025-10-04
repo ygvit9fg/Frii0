@@ -19,8 +19,6 @@ fun UsernameScreen(navController: NavController, name: String, email: String, pa
     val dataStoreManager = remember { DataStoreManager(context) }
     val scope = rememberCoroutineScope()
 
-
-
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -48,10 +46,19 @@ fun UsernameScreen(navController: NavController, name: String, email: String, pa
 
             Button(onClick = {
                 scope.launch {
+                    val db = com.example.friiomain.data.AppDatabase.getDatabase(context)
+                    val userDao = db.userDao()
+
+                    // 1️⃣ обновляем username в БД
+                    userDao.updateUsernameByEmail(email, username)
+
+                    // 2️⃣ сохраняем username в DataStore
                     dataStoreManager.saveUserUsername(username)
-                }
-                navController.navigate("preferences/$email/$password/$name/$username") {
-                    popUpTo("username") { inclusive = true }
+
+                    // 3️⃣ переходим на следующий экран
+                    navController.navigate("preferences/$email/$password/$name/$username") {
+                        popUpTo("username") { inclusive = true }
+                    }
                 }
             }) {
                 Text("Далее")
@@ -59,5 +66,6 @@ fun UsernameScreen(navController: NavController, name: String, email: String, pa
         }
     }
 }
+
 
 
