@@ -24,21 +24,27 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
 
-            val startDestination = if (sessionManager.isLoggedIn()) {
-                "home/${sessionManager.getUserEmail()}/${sessionManager.getUserName()}"
+            // Определяем с чего начинать
+            val userEmail = sessionManager.getUserEmail()
+            val userName = sessionManager.getUserName()
+
+            val startDestination = if (!userEmail.isNullOrEmpty() && !userName.isNullOrEmpty()) {
+                "home/$userEmail/$userName"
             } else {
                 "login"
             }
+
+
 
             NavHost(
                 navController = navController,
                 startDestination = startDestination
             ) {
-                // Login
+                // Экран логина
                 composable("login") {
                     LoginScreen(navController) { email, name ->
                         sessionManager.saveUser(email, name)
-                        navController.navigate("home/$email") {
+                        navController.navigate("home/$email/$name") {
                             popUpTo("login") { inclusive = true }
                         }
                     }
@@ -104,8 +110,21 @@ class MainActivity : ComponentActivity() {
                 composable("home/{email}/{name}") { backStackEntry ->
                     val email = backStackEntry.arguments?.getString("email") ?: ""
                     val name = backStackEntry.arguments?.getString("name") ?: ""
-                    HomeScreen(navController, email, name)
+                    HomeScreen(
+                        navController = navController,
+                        email = email,
+                        name = name,
+                        onLogout = {
+                            sessionManager.clear() // очищаем данные
+                            navController.navigate("login") {
+                                popUpTo("home/{email}/{name}") { inclusive = true }
+                            }
+                        }
+                    )
                 }
+
+
+
 
                 // Add Friend
                 composable("addFriend/{email}") { backStackEntry ->

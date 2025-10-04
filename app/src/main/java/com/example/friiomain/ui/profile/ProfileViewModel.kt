@@ -44,6 +44,12 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    fun updateUserEmail(newEmail: String) {   // 🔥 добавлено
+        viewModelScope.launch {
+            dataStoreManager.saveUserEmail(newEmail)
+        }
+    }
+
     fun updateUserPreferences(prefs: List<String>) {
         viewModelScope.launch {
             dataStoreManager.saveUserPreferences(prefs)
@@ -66,12 +72,20 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    fun updateUserUsername(newUsername: String) {
+        viewModelScope.launch {
+            dataStoreManager.saveUserUsername(newUsername)
+        }
+    }
+
+
     fun clearAll() {
         viewModelScope.launch {
             dataStoreManager.clearAll()
         }
     }
 }
+
 
 class ProfileViewModelFactory(
     private val dataStoreManager: DataStoreManager

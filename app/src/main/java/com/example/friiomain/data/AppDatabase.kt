@@ -5,7 +5,11 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [UserEntity::class, FriendEntity::class], version = 3)
+@Database(
+    entities = [UserEntity::class, FriendEntity::class], // ✅ именно так
+    version = 2,                    // 🔥 число напрямую, не переменная
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun friendDao(): FriendDao
@@ -16,14 +20,15 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                Room.databaseBuilder(
+                val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "friio_database"
+                    "app_database"
                 )
                     .fallbackToDestructiveMigration()
                     .build()
-                    .also { INSTANCE = it }
+                INSTANCE = instance
+                instance
             }
         }
     }

@@ -7,6 +7,7 @@ import com.google.zxing.common.BitMatrix
 
 object QRCodeGenerator {
     fun generateQRCode(content: String, size: Int = 512): Bitmap {
+
         val bitMatrix: BitMatrix = MultiFormatWriter().encode(
             content,
             BarcodeFormat.QR_CODE,

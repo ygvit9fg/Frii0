@@ -21,6 +21,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.example.friiomain.data.UserDao
 import com.example.friiomain.data.UserEntity
+import androidx.navigation.NavController
+
+import kotlinx.coroutines.withContext
 
 
 @Composable
@@ -28,7 +31,8 @@ fun SettingsDialog(
     onDismiss: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel(),
     userDao: UserDao,
-    userEmail: String
+    userEmail: String,
+    navController: NavController
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -47,6 +51,8 @@ fun SettingsDialog(
     var newPassword by remember { mutableStateOf("") }
 
     var notificationsEnabled by remember { mutableStateOf(true) }
+    var interfaceEnabled by remember { mutableStateOf(false) }
+
 
     // Загружаем пароль из БД при открытии
     LaunchedEffect(userEmail) {
@@ -135,21 +141,35 @@ fun SettingsDialog(
                         OutlinedTextField(
                             value = newPassword,
                             onValueChange = { newPassword = it },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            label = { Text("Новый пароль") }
                         )
                         IconButton(onClick = {
                             scope.launch {
-                                // обновляем пароль в DataStore
-                                viewModel.updateUserPassword(newPassword)
-
-                                // сохраняем новый пароль в Room
-                                withContext(Dispatchers.IO) {
-                                    userDao.getUserByEmail(userEmail)?.let {
-                                        userDao.update(it.copy(password = newPassword))
+                                if (newPassword.isNotBlank()) {
+                                    // обновляем в Room
+                                    withContext(Dispatchers.IO) {
+                                        userDao.getUserByEmail(userEmail)?.let {
+                                            userDao.update(it.copy(password = newPassword))
+                                        }
                                     }
+
+                                    // обновляем в DataStore
+                                    viewModel.updateUserPassword(newPassword)
+
+                                    // локальное состояние
+                                    password = newPassword
+                                    editingPassword = false
+
+                                    Toast.makeText(context, "Пароль обновлён", Toast.LENGTH_SHORT)
+                                        .show()
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Пароль не может быть пустым",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
-                                password = newPassword
-                                editingPassword = false
                             }
                         }) {
                             Icon(Icons.Default.Check, contentDescription = "Сохранить")
@@ -168,28 +188,83 @@ fun SettingsDialog(
                 Spacer(Modifier.height(16.dp))
 
                 // Уведомления
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                @Composable
+                fun NotificationRow(
+                    title: String,
+                    checked: Boolean,
+                    onCheckedChange: (Boolean) -> Unit
                 ) {
-                    Text("Уведомления", modifier = Modifier.weight(1f))
-                    Switch(
-                        checked = notificationsEnabled,
-                        onCheckedChange = { notificationsEnabled = it }
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Уведомления", modifier = Modifier.weight(1f))
+                        Switch(
+                            checked = notificationsEnabled,
+                            onCheckedChange = { notificationsEnabled = it }
+                        )
+                    }
                 }
 
                 Spacer(Modifier.height(16.dp))
-                Divider()
+
                 Spacer(Modifier.height(16.dp))
+
+                //тема
+                @Composable
+                fun SettingSwitchRow(
+                    title: String,
+                    checked: Boolean,
+                    onCheckedChange: (Boolean) -> Unit
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                    ) {
+                        Text(title, modifier = Modifier.weight(1f))
+                        Switch(
+                            checked = checked,
+                            onCheckedChange = onCheckedChange
+                        )
+                    }
+                }
+
+                SettingSwitchRow(
+                    title = "Уведомления",
+                    checked = notificationsEnabled,
+                    onCheckedChange = { notificationsEnabled = it }
+                )
+
+                Divider()
+
+                SettingSwitchRow(
+                    title = "Тёмная тема",
+                    checked = interfaceEnabled,
+                    onCheckedChange = { interfaceEnabled = it }
+                )
+
 
                 // Выйти
                 Button(
                     onClick = {
                         scope.launch {
+                            // удаляем/очищаем в БД в IO-потоке
+                            withContext(Dispatchers.IO) {
+                                userDao.getUserByEmail(userEmail)?.let { userDao.delete(it) }
+                                // или userDao.deleteByEmail(userEmail) если добавил метод
+                            }
+
+                            // чистим DataStore / ViewModel / сессию
                             viewModel.clearAll()
-                            Toast.makeText(context, "Вы вышли из аккаунта", Toast.LENGTH_SHORT).show()
+
+                            Toast.makeText(context, "Вы вышли из аккаунта", Toast.LENGTH_SHORT)
+                                .show()
                             onDismiss()
+
+                            // Навигация на экран логина, очищаем стек
+                            navController.navigate("login") {
+                                popUpTo("home/{email}/{name}") { inclusive = true }
+                            }
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -204,13 +279,14 @@ fun SettingsDialog(
                     onClick = {
                         scope.launch {
                             withContext(Dispatchers.IO) {
-                                userDao.getUserByEmail(userEmail)?.let {
-                                    userDao.delete(it)
-                                }
+                                userDao.getUserByEmail(userEmail)?.let { userDao.delete(it) }
                             }
                             viewModel.clearAll()
                             Toast.makeText(context, "Аккаунт удален", Toast.LENGTH_SHORT).show()
                             onDismiss()
+                            navController.navigate("login") {
+                                popUpTo("home/{email}/{name}") { inclusive = true }
+                            }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
@@ -219,9 +295,11 @@ fun SettingsDialog(
                     Text("Удалить аккаунт")
                 }
             }
+            }
         }
     }
-}
+
+
 
 
 

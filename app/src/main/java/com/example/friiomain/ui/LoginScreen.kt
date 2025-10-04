@@ -8,25 +8,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.friiomain.data.AppDatabase
-import com.example.friiomain.data.DataStoreManager
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import com.example.friiomain.ui.profile.LoginViewModel
+import com.example.friiomain.ui.profile.LoginViewModelFactory
 import androidx.compose.ui.Alignment
-import com.example.friiomain.ui.profile.ProfileViewModel
-import androidx.hilt.navigation.compose.hiltViewModel
+
 
 @Composable
 fun LoginScreen(
     navController: NavController,
-    viewModel: ProfileViewModel = hiltViewModel(),
-    onLoginSuccess: (email: String, name: String) -> Unit
-
+    onLoginSuccess: (String, String) -> Unit
 ) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val userDao = db.userDao()
-    val coroutineScope = rememberCoroutineScope()
+
+    val loginViewModel: LoginViewModel = viewModel(
+        factory = LoginViewModelFactory(userDao)
+    )
+
+    val currentUser by loginViewModel.currentUser.collectAsState()
+    val errorMessage by loginViewModel.error.collectAsState()
 
     var emailInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
@@ -63,10 +66,9 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(onClick = {
-                val email = "user@example.com" // получаем из полей
-                val name = "Dima"              // получаем из полей
-                navController.navigate("home/$email/$name") {
-                    popUpTo("login") { inclusive = true }
+                loginViewModel.login(emailInput, passwordInput) { user ->
+                    // вызываем колбэк с email и name
+                    onLoginSuccess(user.email, user.name)
                 }
             }) {
                 Text("Продолжить")
@@ -96,9 +98,20 @@ fun LoginScreen(
                     )
                 }
             }
+
+            // ✅ показываем ошибку, если есть
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = errorMessage ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
     }
 }
+
 
 
 

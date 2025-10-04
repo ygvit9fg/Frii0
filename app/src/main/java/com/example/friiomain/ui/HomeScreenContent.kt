@@ -132,13 +132,13 @@ fun HomeScreenContent(
         }
 
         if (showSettingsDialog) {
-            key(showSettingsDialog) {
-                SettingsDialog(
-                    userDao = AppDatabase.getDatabase(context).userDao(),
-                    userEmail = email,
-                    onDismiss = { showSettingsDialog = false }
-                )
-            }
+            SettingsDialog(
+                onDismiss = { showSettingsDialog = false },
+                viewModel = viewModel, // можно опустить — он по-умолчанию берётся через Hilt
+                userDao = AppDatabase.getDatabase(context).userDao(),
+                userEmail = email,
+                navController = navController
+            )
         }
 
 

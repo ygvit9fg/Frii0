@@ -53,7 +53,8 @@ fun HomeScreen(
     navController: NavController,
     email: String,
     name: String,
-    viewModel: ProfileViewModel = hiltViewModel()
+    viewModel: ProfileViewModel = hiltViewModel(),
+    onLogout: () -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
