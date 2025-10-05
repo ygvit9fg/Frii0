@@ -12,6 +12,13 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import com.example.friiomain.data.AppDatabase
 import com.example.friiomain.data.UserEntity
+import android.widget.Toast
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 
 
 @Composable
@@ -75,27 +82,42 @@ fun RegisterScreen(navController: NavController) {
                         val db = AppDatabase.getDatabase(context)
                         val userDao = db.userDao()
 
+                        // Проверяем, есть ли уже аккаунт с таким email
+                        val existingUser = withContext(Dispatchers.IO) {
+                            userDao.getUserByEmail(email)
+                        }
 
-                        val newUser = UserEntity(
-                            email = email,
-                            name = name,
-                            username = null, // ← ставим null, чтобы потом обновить
-                            password = password,
-                            preferences = "",
-                            avatarBase64 = null
-                        )
-                        userDao.insert(newUser)
+                        if (existingUser != null) {
+                            // Если почта уже зарегистрирована — показываем ошибку
+                            Toast.makeText(
+                                context,
+                                "Аккаунт с такой почтой уже существует",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } else {
+                            // Если почта свободна — регистрируем пользователя
+                            val newUser = UserEntity(
+                                email = email,
+                                name = name,
+                                username = "",
+                                password = password,
+                                preferences = ""
+                            )
 
-                        // сохраняем email и имя
-                        dataStoreManager.saveUserEmail(email)
-                        dataStoreManager.saveUserName(name)
-                        dataStoreManager.saveUserPreferences(emptyList())
+                            withContext(Dispatchers.IO) {
+                                userDao.insert(newUser)
+                            }
 
-                        // UsernameScreen
-                        navController.navigate("username?name=$name&email=$email&password=$password")
+                            // сохраняем email и имя в DataStore
+                            dataStoreManager.saveUserEmail(email)
+                            dataStoreManager.saveUserName(name)
+                            dataStoreManager.saveUserPreferences(emptyList())
+
+                            // переход к экрану username
+                            navController.navigate("username?name=$name&email=$email&password=$password")
+                        }
                     }
-                },
-                modifier = Modifier.fillMaxWidth()
+                }
             ) {
                 Text("Далее")
             }
