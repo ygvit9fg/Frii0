@@ -11,7 +11,13 @@ fun bitmapToBase64(bitmap: Bitmap): String {
     return Base64.encodeToString(stream.toByteArray(), Base64.DEFAULT)
 }
 
-fun base64ToBitmap(base64: String): Bitmap? {
-    val bytes = Base64.decode(base64, Base64.DEFAULT)
-    return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+fun base64ToBitmap(base64String: String): Bitmap? {
+    return try {
+        val decodedBytes = Base64.decode(base64String, Base64.DEFAULT)
+        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+    } catch (e: Exception) {
+        null
+    }
 }
+
+

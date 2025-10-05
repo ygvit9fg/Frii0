@@ -7,13 +7,16 @@ import androidx.room.RoomDatabase
 
 
 @Database(
-    entities = [UserEntity::class, FriendEntity::class], // ✅ именно так
-    version = 2,                    // 🔥 число напрямую, не переменная
+    entities = [UserEntity::class, FriendEntity::class, FriendRequestEntity::class],
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun friendDao(): FriendDao
+
+    abstract fun friendRequestDao(): UserDao.FriendRequestDao
+
 
     companion object {
         @Volatile

@@ -1,12 +1,14 @@
 package com.example.friiomain.ui
 
 import android.graphics.Bitmap
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,13 +19,21 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.friiomain.data.AppDatabase
 import com.example.friiomain.data.FriendEntity
+import com.example.friiomain.data.FriendRequestEntity
+import com.example.friiomain.ui.components.FriendRequestsDialog
 import com.example.friiomain.utils.QRCodeGenerator
 import com.example.friiomain.utils.SessionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.widget.Toast
-import com.example.friiomain.data.DataStoreManager
+import android.graphics.BitmapFactory
+import android.util.Base64
+import androidx.compose.material.icons.filled.Person
+import com.example.friiomain.data.UserEntity
+import androidx.compose.material.icons.filled.Person
+import com.example.friiomain.utils.base64ToBitmap
+
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,21 +41,28 @@ import com.example.friiomain.data.DataStoreManager
 fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
-    val userDao = db.userDao()
     val friendDao = db.friendDao()
     val coroutineScope = rememberCoroutineScope()
     val sessionManager = remember { SessionManager(context) }
 
     var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var friends by remember { mutableStateOf(listOf<FriendEntity>()) }
+    var requests by remember { mutableStateOf(listOf<FriendRequestEntity>()) }
+    var showRequests by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var foundUser by remember { mutableStateOf<UserEntity?>(null) }
+    val userDao = db.userDao()
 
 
+    // Загрузка QR + список друзей + входящие заявки
     LaunchedEffect(currentUserEmail) {
         qrBitmap = QRCodeGenerator.generateQRCode(currentUserEmail)
         coroutineScope.launch(Dispatchers.IO) {
             val list = friendDao.getFriendsForUser(currentUserEmail)
+            val incoming = friendDao.getIncomingRequests(currentUserEmail)
             withContext(Dispatchers.Main) {
                 friends = list
+                requests = incoming
             }
         }
     }
@@ -58,6 +75,11 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Назад")
                     }
+                },
+                actions = {
+                    IconButton(onClick = { showRequests = true }) {
+                        Icon(Icons.Default.PersonAdd, contentDescription = "Заявки в друзья")
+                    }
                 }
             )
         }
@@ -67,9 +89,9 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
                 .fillMaxSize()
                 .padding(padding)
                 .padding(24.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.Top
         ) {
-
+            // QR-код
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.Center
@@ -84,14 +106,144 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                Text("Email: $currentUserEmail", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "Покажите QR-код другу, чтобы добавить вас",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            //Мои друзья
+
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Введите username") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        val query = searchQuery.trim().removePrefix("@").lowercase()
+                        val user: UserEntity? = withContext(Dispatchers.IO) {
+                            userDao.getUserByUsername(searchQuery.trim())
+                        }
+
+                        if (user != null) {
+                            foundUser = user
+                        } else {
+                            foundUser = null
+                            Toast.makeText(context, "Пользователь не найден", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Найти") }
+
+
+            foundUser?.let { user ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // Аватар и имя
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            val avatarBitmap = base64ToBitmap(user.avatarBase64 ?: "")
+                            if (avatarBitmap != null) {
+                                Image(
+                                    bitmap = avatarBitmap.asImageBitmap(),
+                                    contentDescription = "Avatar",
+                                    modifier = Modifier.size(40.dp)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Filled.Person,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(40.dp)
+                                )
+                            }
+
+                            Spacer(Modifier.width(12.dp))
+
+                            Column {
+                                Text(
+                                    user.username ?: "Unknown",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(user.email, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+
+                        // Кнопка "Добавить"
+                        Button(
+                            onClick = {
+                                coroutineScope.launch {
+                                    // Получаем пользователя в IO
+                                    val cleanQuery =
+                                        searchQuery.trim().removePrefix("@").lowercase()
+                                    val user: UserEntity? = withContext(Dispatchers.IO) {
+                                        userDao.getUserByUsernameOrEmail("%$cleanQuery%")
+                                    }
+
+                                    if (user != null) {
+                                        // Вставляем заявку в IO
+                                        withContext(Dispatchers.IO) {
+                                            val currentUser = withContext(Dispatchers.IO) {
+                                                userDao.getUserByEmail(currentUserEmail)
+                                            }
+                                            val request = FriendRequestEntity(
+                                                fromEmail = currentUserEmail,
+                                                toEmail = user.email,
+                                                status = "pending",
+                                                username = currentUser?.username ?: "Unknown",
+                                                avatarBase64 = currentUser?.avatarBase64
+                                            )
+                                            db.friendRequestDao().insert(request)
+                                        }
+
+                                        Toast.makeText(
+                                            context,
+                                            "Заявка отправлена!",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        foundUser = null
+                                        searchQuery = ""
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "Пользователь не найден",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
+
+
+                            }
+                        ) {
+                            Text("Добавить")
+                        }
+
+                    }
+                }
+            }
+
+
+            // Список друзей
             Column(modifier = Modifier.fillMaxWidth()) {
-                Text("Мои друзья", style = MaterialTheme.typography.titleSmall)
+                Text("Мои друзья 👥", style = MaterialTheme.typography.titleSmall)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 if (friends.isEmpty()) {
@@ -104,100 +256,105 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 200.dp)
+                            .heightIn(max = 300.dp)
                     ) {
                         items(friends) { friend ->
+                            // Создаём состояние для данных друга
+                            val friendData by produceState<UserEntity?>(initialValue = null, friend) {
+                                value = userDao.getUserByEmail(friend.friendEmail)
+                            }
+
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 6.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                )
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                             ) {
-                                Text(
-                                    text = friend.friendEmail,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.padding(12.dp)
-                                )
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    val avatarBitmap = base64ToBitmap(friendData?.avatarBase64 ?: "")
+                                    if (avatarBitmap != null) {
+                                        Image(
+                                            bitmap = avatarBitmap.asImageBitmap(),
+                                            contentDescription = "Avatar",
+                                            modifier = Modifier.size(40.dp)
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.Person,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(40.dp)
+                                        )
+                                    }
+
+                                    Spacer(Modifier.width(12.dp))
+
+                                    Column {
+                                        Text(friendData?.username ?: "Unknown", style = MaterialTheme.typography.bodyMedium)
+                                        Text(friend.friendEmail, style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
+        // Диалог заявок
+        if (showRequests) {
+            FriendRequestsDialog(
+                requests = requests,
+                onAccept = { req ->
+                    coroutineScope.launch(Dispatchers.IO) {
+                        try {
 
-            // Выйти / Удалить
-            Column {
+                            friendDao.acceptRequest(req)
 
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            try {
-                                withContext(Dispatchers.IO) {
-                                    val ds = DataStoreManager(context)
-                                    ds.clearAll() // удаляем session/email/name
-                                }
-                                withContext(Dispatchers.Main) {
-                                    navController.navigate("login") {
-                                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "Ошибка при выходе: ${e.message}", Toast.LENGTH_LONG).show()
-                                }
+
+                            val updatedFriends = friendDao.getFriendsForUser(currentUserEmail)
+
+
+                            val updatedRequests = friendDao.getIncomingRequests(currentUserEmail)
+
+                            withContext(Dispatchers.Main) {
+                                friends = updatedFriends
+                                requests = updatedRequests
+                                showRequests = true
+                            }
+                        } catch (e: Exception) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Ошибка: ${e.message}", Toast.LENGTH_LONG)
+                                    .show()
                             }
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Выйти из аккаунта")
-                }
+                    }
 
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Кнопка удаления аккаунта
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            try {
-                                withContext(Dispatchers.IO) {
-                                    val user = userDao.getUserByEmail(currentUserEmail) // используем getUserByEmail — тот же метод, что в других местах
-                                    if (user != null) {
-                                        userDao.delete(user)
-                                    }
-
-                                    val ds = DataStoreManager(context)
-                                    ds.clearAll() // suspend
-                                }
-
-                                withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "Аккаунт удален", Toast.LENGTH_LONG).show()
-                                    navController.navigate("register") {
-                                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "Ошибка при удалении: ${e.message}", Toast.LENGTH_LONG).show()
-                                }
+                },
+                onDecline = { req ->
+                    coroutineScope.launch(Dispatchers.IO) {
+                        try {
+                            friendDao.deleteRequest(req.id)
+                            val updatedRequests = friendDao.getIncomingRequests(currentUserEmail)
+                            withContext(Dispatchers.Main) {
+                                requests = updatedRequests
+                            }
+                        } catch (e: Exception) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Ошибка: ${e.message}", Toast.LENGTH_LONG)
+                                    .show()
                             }
                         }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Удалить аккаунт")
-                }
-
-
-            }
+                    }
+                },
+                onDismiss = { showRequests = false }
+            )
         }
     }
 }
+
 
 
 
