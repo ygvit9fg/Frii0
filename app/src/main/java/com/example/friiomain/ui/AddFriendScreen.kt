@@ -32,6 +32,8 @@ import androidx.compose.material.icons.filled.Person
 import com.example.friiomain.data.UserEntity
 import androidx.compose.material.icons.filled.Person
 import com.example.friiomain.utils.base64ToBitmap
+import androidx.compose.material.icons.filled.Delete
+
 
 
 
@@ -259,46 +261,87 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
                             .heightIn(max = 300.dp)
                     ) {
                         items(friends) { friend ->
-                            // Создаём состояние для данных друга
-                            val friendData by produceState<UserEntity?>(initialValue = null, friend) {
-                                value = userDao.getUserByEmail(friend.friendEmail)
-                            }
-
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 6.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    val avatarBitmap = base64ToBitmap(friendData?.avatarBase64 ?: "")
-                                    if (avatarBitmap != null) {
-                                        Image(
-                                            bitmap = avatarBitmap.asImageBitmap(),
-                                            contentDescription = "Avatar",
-                                            modifier = Modifier.size(40.dp)
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = Icons.Default.Person,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(40.dp)
-                                        )
+                                    // Левая часть: аватар + имя + почта
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        var friendData by remember { mutableStateOf<UserEntity?>(null) }
+
+                                        // Загружаем данные друга
+                                        LaunchedEffect(friend.friendEmail) {
+                                            withContext(Dispatchers.IO) {
+                                                val user = userDao.getUserByEmail(friend.friendEmail)
+                                                withContext(Dispatchers.Main) {
+                                                    friendData = user
+                                                }
+                                            }
+                                        }
+
+                                        // Аватар
+                                        val avatarBitmap = friendData?.avatarBase64?.let { base64ToBitmap(it) }
+                                        if (avatarBitmap != null) {
+                                            Image(
+                                                bitmap = avatarBitmap.asImageBitmap(),
+                                                contentDescription = "Avatar",
+                                                modifier = Modifier.size(40.dp)
+                                            )
+                                        } else {
+                                            Icon(
+                                                imageVector = Icons.Default.Person,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(40.dp)
+                                            )
+                                        }
+
+                                        Spacer(Modifier.width(12.dp))
+
+                                        Column {
+                                            Text(friendData?.username ?: friend.friendEmail, style = MaterialTheme.typography.bodyMedium)
+                                            Text(friend.friendEmail, style = MaterialTheme.typography.bodySmall)
+                                        }
                                     }
 
-                                    Spacer(Modifier.width(12.dp))
+                                    // Правая часть: кнопка "Удалить"
+                                    IconButton(
+                                        onClick = {
+                                            coroutineScope.launch(Dispatchers.IO) {
+                                                // Удаляем друга с обеих сторон
+                                                friendDao.deleteFriend(currentUserEmail, friend.friendEmail)
+                                                friendDao.deleteFriend(friend.friendEmail, currentUserEmail)
 
-                                    Column {
-                                        Text(friendData?.username ?: "Unknown", style = MaterialTheme.typography.bodyMedium)
-                                        Text(friend.friendEmail, style = MaterialTheme.typography.bodySmall)
+                                                // Обновляем список
+                                                val updatedFriends = friendDao.getFriendsForUser(currentUserEmail)
+                                                withContext(Dispatchers.Main) {
+                                                    friends = updatedFriends
+                                                    Toast.makeText(context, "Друг удалён", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Удалить",
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
                                     }
                                 }
                             }
                         }
                     }
+
                 }
             }
         }
