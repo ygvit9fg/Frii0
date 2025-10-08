@@ -72,11 +72,19 @@ interface UserDao {
 
     @Query("""
     SELECT * FROM users 
-    WHERE LOWER(username) LIKE LOWER(:query) 
-       OR LOWER(email) LIKE LOWER(:query)
+    WHERE username LIKE :query COLLATE NOCASE
+       OR email LIKE :query COLLATE NOCASE
     LIMIT 1
 """)
     suspend fun getUserByUsernameOrEmail(query: String): UserEntity?
+
+    @Query("""
+    SELECT * FROM users 
+    WHERE LOWER(username) = LOWER(:query) 
+       OR LOWER(email) = LOWER(:query)
+    LIMIT 1
+""")
+    suspend fun findUser(query: String): UserEntity?
 
     @Dao
     interface FriendRequestDao {

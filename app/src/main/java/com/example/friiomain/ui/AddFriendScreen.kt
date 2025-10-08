@@ -126,27 +126,28 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
 
             Spacer(Modifier.height(8.dp))
 
+            // --- Кнопка "Найти"
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        val query = searchQuery.trim().removePrefix("@").lowercase()
+                        val cleanQuery = searchQuery.trim().removePrefix("@").lowercase()
                         val user: UserEntity? = withContext(Dispatchers.IO) {
-                            userDao.getUserByUsername(searchQuery.trim())
+                            userDao.getUserByUsernameOrEmail("%$cleanQuery%")
                         }
 
                         if (user != null) {
                             foundUser = user
                         } else {
                             foundUser = null
-                            Toast.makeText(context, "Пользователь не найден", Toast.LENGTH_SHORT)
-                                .show()
+                            Toast.makeText(context, "Пользователь не найден", Toast.LENGTH_SHORT).show()
                         }
                     }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("Найти") }
+                }
+            ) {
+                Text("Найти")
+            }
 
-
+// --- Карточка найденного пользователя
             foundUser?.let { user ->
                 Card(
                     modifier = Modifier
@@ -181,66 +182,43 @@ fun AddFriendScreen(navController: NavController, currentUserEmail: String) {
                             Spacer(Modifier.width(12.dp))
 
                             Column {
-                                Text(
-                                    user.username ?: "Unknown",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                                Text(user.username, style = MaterialTheme.typography.bodyMedium)
                                 Text(user.email, style = MaterialTheme.typography.bodySmall)
                             }
                         }
 
-                        // Кнопка "Добавить"
+                        // 👉 Кнопка "Добавить" только здесь!
                         Button(
                             onClick = {
                                 coroutineScope.launch {
-                                    // Получаем пользователя в IO
-                                    val cleanQuery =
-                                        searchQuery.trim().removePrefix("@").lowercase()
-                                    val user: UserEntity? = withContext(Dispatchers.IO) {
-                                        userDao.getUserByUsernameOrEmail("%$cleanQuery%")
+                                    val currentUser = withContext(Dispatchers.IO) {
+                                        userDao.getUserByEmail(currentUserEmail)
                                     }
 
-                                    if (user != null) {
-                                        // Вставляем заявку в IO
-                                        withContext(Dispatchers.IO) {
-                                            val currentUser = withContext(Dispatchers.IO) {
-                                                userDao.getUserByEmail(currentUserEmail)
-                                            }
-                                            val request = FriendRequestEntity(
-                                                fromEmail = currentUserEmail,
-                                                toEmail = user.email,
-                                                status = "pending",
-                                                username = currentUser?.username ?: "Unknown",
-                                                avatarBase64 = currentUser?.avatarBase64
-                                            )
-                                            db.friendRequestDao().insert(request)
-                                        }
+                                    val request = FriendRequestEntity(
+                                        fromEmail = currentUserEmail,
+                                        toEmail = user.email,
+                                        status = "pending",
+                                        username = currentUser?.username ?: "Unknown",
+                                        avatarBase64 = currentUser?.avatarBase64
+                                    )
 
-                                        Toast.makeText(
-                                            context,
-                                            "Заявка отправлена!",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        foundUser = null
-                                        searchQuery = ""
-                                    } else {
-                                        Toast.makeText(
-                                            context,
-                                            "Пользователь не найден",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                    withContext(Dispatchers.IO) {
+                                        db.friendRequestDao().insert(request)
                                     }
+
+                                    Toast.makeText(context, "Заявка отправлена!", Toast.LENGTH_SHORT).show()
+                                    foundUser = null
+                                    searchQuery = ""
                                 }
-
-
                             }
                         ) {
                             Text("Добавить")
                         }
-
                     }
                 }
             }
+
 
 
             // Список друзей
