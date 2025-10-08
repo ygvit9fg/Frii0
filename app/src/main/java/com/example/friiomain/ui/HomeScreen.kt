@@ -43,6 +43,9 @@ import java.net.URLEncoder
 import com.example.friiomain.ui.profile.ProfileViewModel
 import com.example.friiomain.ui.components.SettingsDialog
 import com.example.friiomain.data.DataStoreManager
+import com.example.friiomain.ui.profile.NotificationsViewModel
+import com.example.friiomain.data.NotificationEntity
+
 
 
 
@@ -53,7 +56,7 @@ fun HomeScreen(
     navController: NavController,
     email: String,
     name: String,
-    viewModel: ProfileViewModel = hiltViewModel(),
+    viewModel: ProfileViewModel = hiltViewModel(),   // 👈 тут ProfileViewModel
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
@@ -64,6 +67,26 @@ fun HomeScreen(
     var showProfileDialog by remember { mutableStateOf(false) }
     var showNotificationsDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
+    val notificationsViewModel: NotificationsViewModel = hiltViewModel()
+
+
+    LaunchedEffect(Unit) {
+        notificationsViewModel.addNotification(
+            NotificationEntity(
+                type = "weather",
+                title = "Сегодня холодно ❄️",
+                message = "Отличное время встретиться с Ваней"
+            )
+        )
+        notificationsViewModel.addNotification(
+            NotificationEntity(
+                type = "news",
+                title = "В Дубае пошёл дождь ☔",
+                message = "Первый раз за год!"
+            )
+        )
+    }
+
 
     // Проверка email — если пусто, показываем загрузку
     if (email.isBlank()) {
@@ -79,7 +102,8 @@ fun HomeScreen(
             navController = navController,
             email = email,
             name = name,
-            viewModel = viewModel
+            viewModel = viewModel,
+            notificationsViewModel = notificationsViewModel
         )
     }
 }

@@ -1,6 +1,9 @@
 package com.example.friiomain.di
 
 import android.content.Context
+import com.example.friiomain.data.AppDatabase
+import com.example.friiomain.data.NotificationDao
+import com.example.friiomain.data.NotificationsRepository
 import com.example.friiomain.data.DataStoreManager
 import dagger.Module
 import dagger.Provides
@@ -20,4 +23,19 @@ object AppModule {
     ): DataStoreManager {
         return DataStoreManager(context)
     }
+
+    @Provides
+    @Singleton
+    fun provideDatabase(
+        @ApplicationContext appContext: Context
+    ): AppDatabase = AppDatabase.getDatabase(appContext)
+
+    @Provides
+    fun provideNotificationDao(db: AppDatabase): NotificationDao = db.notificationDao()
+
+    @Provides
+    @Singleton
+    fun provideNotificationsRepository(dao: NotificationDao): NotificationsRepository =
+        NotificationsRepository(dao)
 }
+

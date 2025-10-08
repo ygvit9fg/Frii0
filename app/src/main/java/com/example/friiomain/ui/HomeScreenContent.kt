@@ -41,14 +41,16 @@ import com.example.friiomain.ui.profile.ProfileViewModel
 import com.example.friiomain.ui.components.SettingsDialog
 import com.example.friiomain.data.DataStoreManager
 import androidx.hilt.navigation.compose.hiltViewModel
-
+import com.example.friiomain.ui.profile.NotificationsViewModel
+import com.example.friiomain.ui.components.NotificationsDialog
 
 @Composable
 fun HomeScreenContent(
     navController: NavController,
     email: String,
     name: String,
-    viewModel: ProfileViewModel = hiltViewModel()
+    viewModel: ProfileViewModel = hiltViewModel(),
+    notificationsViewModel: NotificationsViewModel
 ) {
 
 
@@ -144,11 +146,9 @@ fun HomeScreenContent(
 
 
         if (showNotificationsDialog) {
-            AlertDialog(
-                onDismissRequest = { showNotificationsDialog = false },
-                confirmButton = {},
-                title = { Text("Уведомления") },
-                text = { Text("Пока пусто 🚀") }
+            NotificationsDialog(
+                onDismiss = { showNotificationsDialog = false },
+                viewModel = notificationsViewModel   // 👈 теперь берём реальные уведомления
             )
         }
 

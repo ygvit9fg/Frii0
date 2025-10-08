@@ -5,35 +5,35 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-
 @Database(
-    entities = [UserEntity::class, FriendEntity::class, FriendRequestEntity::class],
-    version = 3,
+    entities = [
+        UserEntity::class,
+        NotificationEntity::class,
+        FriendEntity::class,
+        FriendRequestEntity::class // 👈 добавили
+    ],
+    version = 4, // обязательно увеличь версию
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun friendDao(): FriendDao
-
-    abstract fun friendRequestDao(): UserDao.FriendRequestDao
-
+    abstract fun friendRequestDao(): FriendRequestDao // 👈 новый DAO
+    abstract fun notificationDao(): NotificationDao
 
     companion object {
-        @Volatile
-        private var INSTANCE: AppDatabase? = null
+        @Volatile private var INSTANCE: AppDatabase? = null
 
-        fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
+        fun getDatabase(context: Context): AppDatabase =
+            INSTANCE ?: synchronized(this) {
+                Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "app_database"
+                    "friio_database"
                 )
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration() // сброс базы при изменении схемы
                     .build()
-                INSTANCE = instance
-                instance
+                    .also { INSTANCE = it }
             }
-        }
     }
 }

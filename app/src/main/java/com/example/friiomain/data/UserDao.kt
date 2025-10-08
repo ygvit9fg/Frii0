@@ -7,6 +7,9 @@ import androidx.room.Query
 import androidx.room.Delete
 import androidx.room.Update
 import androidx.room.*
+import kotlinx.coroutines.flow.Flow
+
+
 
 
 @Dao
@@ -89,10 +92,6 @@ interface UserDao {
         @Query("UPDATE friend_requests SET status = 'accepted' WHERE id = :id")
         suspend fun acceptRequest(id: Int)
     }
-
-
-
-
 
 
     @Transaction
